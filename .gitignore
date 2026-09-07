@@ -3,20 +3,23 @@ node_modules
 .worktrees
 .sst
 .env
-.env.local
+.env.*
+!.env.example
 .idea
 .vscode
 .codex
+.agents
+.claude
+.scratch
 *~
 playground
 tmp
+temp/
 dist
 ts-dist
 .turbo
 **/.serena
-.serena/
 **/.omo
-.omo/
 /result
 refs
 Session.vim
@@ -29,6 +32,28 @@ target
 # Local dev files
 opencode-dev
 UPCOMING_CHANGELOG.md
-logs/
 *.bun-build
-tsconfig.tsbuildinfo
+*.tsbuildinfo
+
+# 临时克隆（票据 17 时正式设为 submodule）
+submodule/
+
+# 运行时数据
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# 依赖
+.pnpm-store/
+
+# 构建产物
+build/
+
+# 日志
+*.log
+logs/
+
+# 编辑器与系统
+*.swp
