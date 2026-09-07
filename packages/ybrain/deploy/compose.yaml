@@ -1,0 +1,31 @@
+# 部署模板（票据 09 决策）：两容器 + 宿主机 tailscaled。
+# 服务器目录 /opt/ybrain/：compose.yaml、.env（600 权限）、vault/、data/、headscale/。
+# headscale 服务的详细配置由票据 18 细化；此处保证编排形态与资源限额正确。
+services:
+  headscale:
+    image: headscale/headscale:0.26
+    command: serve
+    ports:
+      - "8080:8080"
+      - "3478:3478/udp"
+      - "41641:41641/udp"
+    volumes:
+      - /opt/ybrain/headscale:/var/lib/headscale
+    mem_limit: 128m
+    restart: unless-stopped
+
+  ybrain:
+    image: ${YBRAIN_IMAGE}
+    ports:
+      # Web 界面与捕获接口仅绑 Tailscale 网卡，公网不可达
+      - "${YBRAIN_TAILSCALE_IP}:4096:4096"
+      - "${YBRAIN_TAILSCALE_IP}:8787:8787" # 捕获接口由票据 19 实装
+    volumes:
+      - /opt/ybrain/vault:/opt/ybrain/vault
+      - /opt/ybrain/data:/opt/ybrain/data
+    env_file: .env
+    environment:
+      # Web 界面基本认证（隧道加密之外的纵深防御）
+      - OPENCODE_SERVER_PASSWORD=${OPENCODE_SERVER_PASSWORD}
+    mem_limit: 1.2g
+    restart: unless-stopped

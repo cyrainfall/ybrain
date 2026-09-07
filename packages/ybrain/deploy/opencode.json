@@ -1,0 +1,4 @@
+{
+  "plugin": ["./plugin/ybrain.ts"],
+  "lsp": false
+}

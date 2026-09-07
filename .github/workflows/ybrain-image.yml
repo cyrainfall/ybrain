@@ -1,0 +1,57 @@
+name: ybrain-image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - packages/ybrain/**
+      - packages/opencode/**
+      - .github/workflows/ybrain-image.yml
+      - package.json
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - uses: ./.github/actions/setup-bun
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build opencode binary (linux-x64)
+        run: bun run --cwd packages/opencode build --single
+
+      - name: Assemble image build context
+        run: |
+          mkdir -p packages/ybrain/deploy/context/plugin
+          cp packages/opencode/dist/opencode-linux-x64/bin/opencode packages/ybrain/deploy/context/opencode
+          cp packages/ybrain/src/index.ts packages/ybrain/deploy/context/plugin/ybrain.ts
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
+
+      - name: Login to Alibaba Cloud ACR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
+        with:
+          registry: ${{ secrets.ACR_REGISTRY }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build and push image
+        run: |
+          IMAGE=${{ secrets.ACR_REGISTRY }}/${{ secrets.ACR_IMAGE }}
+          docker buildx build \
+            --platform linux/amd64 \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            -t "$IMAGE:${{ github.sha }}" \
+            -t "$IMAGE:latest" \
+            --push \
+            packages/ybrain/deploy
