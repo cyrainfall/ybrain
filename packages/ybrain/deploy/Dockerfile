@@ -1,7 +1,7 @@
 # ybrain 运行镜像（linux/amd64）。
 # 构建上下文由 CI（.github/workflows/ybrain-image.yml）组装到本目录 context/：
-#   context/opencode        由 `bun run --cwd packages/opencode build --single` 产出
-#   context/plugin/ybrain.ts  由 packages/ybrain/src/index.ts 复制而来
+#   context/opencode          由 `bun run --cwd packages/opencode build --single` 产出
+#   context/plugin/ybrain.js  由 `bun build --bundle --target=bun` 打包而来（单文件，含依赖）
 FROM debian:bookworm-slim
 
 RUN apt-get update \

@@ -3,6 +3,7 @@ name: ybrain-image
 on:
   push:
     branches:
+      - dev
       - main
     paths:
       - packages/ybrain/**
@@ -32,7 +33,24 @@ jobs:
         run: |
           mkdir -p packages/ybrain/deploy/context/plugin
           cp packages/opencode/dist/opencode-linux-x64/bin/opencode packages/ybrain/deploy/context/opencode
-          cp packages/ybrain/src/index.ts packages/ybrain/deploy/context/plugin/ybrain.ts
+          # Bundle plugin into a single file so multi-module plugins and their
+          # dependencies survive the container (which has no node_modules).
+          # Bun builtins (bun:sqlite, Bun.serve, fetch) stay external automatically.
+          bun build packages/ybrain/src/index.ts \
+            --bundle \
+            --target=bun \
+            --outfile=packages/ybrain/deploy/context/plugin/ybrain.js
+
+      - name: Verify bundled plugin loads
+        run: |
+          bun -e '
+            const m = await import("./packages/ybrain/deploy/context/plugin/ybrain.js")
+            if (typeof m.server !== "function") {
+              console.error("FAIL: plugin bundle does not export a `server` function")
+              process.exit(1)
+            }
+            console.log("PASS: plugin bundle exports server(), keys:", Object.keys(m).join(","))
+          '
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
@@ -47,11 +65,17 @@ jobs:
       - name: Build and push image
         run: |
           IMAGE=${{ secrets.ACR_REGISTRY }}/${{ secrets.ACR_IMAGE }}
+          BRANCH=${GITHUB_REF_NAME}
+          # Always tag by commit sha and by branch name so any branch build is pullable.
+          TAGS="-t $IMAGE:${{ github.sha }} -t $IMAGE:$BRANCH"
+          # Only the main branch moves the `latest` tag; dev builds never overwrite it.
+          if [ "$BRANCH" = "main" ]; then
+            TAGS="$TAGS -t $IMAGE:latest"
+          fi
           docker buildx build \
             --platform linux/amd64 \
             --cache-from type=gha \
             --cache-to type=gha,mode=max \
-            -t "$IMAGE:${{ github.sha }}" \
-            -t "$IMAGE:latest" \
+            $TAGS \
             --push \
             packages/ybrain/deploy
