@@ -80,3 +80,15 @@ jobs:
             $TAGS \
             --push \
             packages/ybrain/deploy
+
+      # P1-3：在与生产镜像相同的 debian-slim + vec0.so 环境里验证 bun:sqlite 扩展链路。
+      # spike 阶段单独 COPY bun，不进入生产镜像。
+      - name: Verify sqlite-vec in image (spike stage)
+        run: |
+          docker buildx build --target spike --load \
+            --provenance=false \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            -t ybrain:spike \
+            packages/ybrain/deploy
+          docker run --rm ybrain:spike

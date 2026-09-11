@@ -20,6 +20,7 @@ GitHub Actions（ybrain-image 工作流）
     │  4. 校验插件可加载
     │  5. 用 Dockerfile 构建镜像
     │  6. 推送到阿里云 ACR
+    │  7. 构建 spike 阶段并在镜像内验证 sqlite-vec
     ▼
 阿里云 ACR（镜像仓库）
     │  镜像标签：<sha>、<branch>，main 分支额外打 latest
@@ -153,21 +154,59 @@ docker buildx build \
 - 只有 `main` 分支才打 `latest`，dev 构建不会覆盖生产标签
 
 **关键参数：**
-
 - `--platform linux/amd64`：服务器是 x86_64
 - `--provenance=false`：**禁用 provenance 证明**。阿里云 ACR 个人版不支持 OCI 空清单（`application/vnd.oci.empty.v1+json`），不加这个会推送失败
-- `--cache-from/--cache-to type=gha`：用 GitHub Actions 缓存加速重复构建
+- `--cache-from/--cache-to type=gha`：用 GitHub Actions 缓存共享基础层，加速重复构建
+
+#### 7. 镜像内验证 sqlite-vec（spike 阶段）
+
+```bash
+docker buildx build --target spike --load -t ybrain:spike packages/ybrain/deploy
+docker run --rm ybrain:spike
+```
+
+构建 Dockerfile 的 `spike` 阶段（含 bun 1.3.14，与仓库 `packageManager` 锁定一致），在容器内运行 [spike/sqlite-vec.ts](file:///Users/cyx/repo/ybrain/packages/ybrain/deploy/spike/sqlite-vec.ts)：加载 vec0 扩展 → 建 1024 维 vec0 虚拟表（与生产嵌入维度一致）→ 写入向量 → KNN 查询断言命中。
+
+**为什么需要这一步**：macOS 上 Bun 默认链接苹果系统的 SQLite（未开启扩展加载），本地直接跑会失败；Linux 容器是生产目标，必须在真实镜像里验证 `bun:sqlite` 能加载 sqlite-vec。
 
 ---
 
 ## 三、Docker 镜像构建（Dockerfile）
 
-```dockerfile
-FROM debian:bookworm-slim
+Dockerfile 分三个阶段：
 
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates ripgrep libstdc++6 \
-  && rm -rf /var/lib/apt/lists/*
+- **base**：debian-slim + 运行时系统包，并下载 sqlite-vec 扩展
+- **spike**：base + bun 二进制 + spike 脚本，仅 CI 验证用，**不进入生产镜像**
+- **runtime**（默认阶段）：base + opencode 二进制 + ybrain 插件
+
+### base 阶段做了什么
+
+```dockerfile
+FROM debian:bookworm-slim AS base
+
+ARG SQLITE_VEC_VERSION=0.1.9
+ARG SQLITE_VEC_SHA256=b959baa1...   # 官方 checksums.txt 里的 sha256
+
+RUN apt-get install -y --no-install-recommends \
+      ca-certificates curl ripgrep libstdc++6 git \
+    && git config --system --add safe.directory '*' \
+    && curl -fsSL "https://github.com/.../sqlite-vec-0.1.9-loadable-linux-x86_64.tar.gz" -o /tmp/vec.tar.gz \
+    && echo "${SQLITE_VEC_SHA256}  /tmp/vec.tar.gz" | sha256sum -c - \
+    && tar -xzf /tmp/vec.tar.gz -C /tmp \
+    && install -D -m 0755 /tmp/vec0.so /opt/ybrain/extensions/vec0.so
+
+ENV SQLITE_VEC_PATH=/opt/ybrain/extensions/vec0.so
+```
+
+要点：
+- **git**：票据 25 在容器内向 Gitee 备份 vault 时使用；`safe.directory '*'` 是因为挂载进来的 vault 目录 owner 与容器内用户不同，不配置会被 git 以 "dubious ownership" 拒绝。部署密钥的挂载在票据 25 补
+- **sqlite-vec 0.1.9**：从 GitHub 官方 release 下载 linux-x86_64 可加载扩展，**用官方 checksums.txt 的 sha256 锁定**，安装到 `/opt/ybrain/extensions/vec0.so`
+- `SQLITE_VEC_PATH` 环境变量是票据 22 数据层加载扩展的约定路径
+
+### runtime 阶段（生产镜像）
+
+```dockerfile
+FROM base AS runtime
 
 ENV BUN_RUNTIME_TRANSPILER_CACHE_PATH=0
 
@@ -182,24 +221,23 @@ ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
 ```
 
 构建上下文（由 CI 组装到 `packages/ybrain/deploy/context/`）：
-
 - `context/opencode` — opencode 单文件二进制
 - `context/plugin/ybrain.js` — 打包后的 ybrain 插件
 - `opencode.json` — opencode 配置（指定加载哪个插件）
 
 镜像内最终结构：
-
 ```
 /opt/ybrain/
-├── opencode.json        # 配置：加载 ./plugin/ybrain.js
-└── plugin/
-    └── ybrain.js        # 插件（单文件）
+├── opencode.json          # 配置：加载 ./plugin/ybrain.js
+├── plugin/
+│   └── ybrain.js          # 插件（单文件）
+└── extensions/
+    └── vec0.so            # sqlite-vec 可加载扩展
 ```
 
 容器启动命令：`opencode serve --port=4096 --hostname=0.0.0.0`。
 
 `opencode.json` 内容：
-
 ```json
 {
   "plugin": ["./plugin/ybrain.js"],
@@ -315,10 +353,22 @@ GitHub secrets `ACR_USERNAME` / `ACR_PASSWORD` 未配置或值为空。去仓库
 ### 5. 插件在容器里加载失败
 
 本地复现 CI 的打包和校验步骤：
-
 ```bash
 bun build packages/ybrain/src/index.ts --bundle --target=bun --outfile=/tmp/ybrain.js
 bun -e 'const m = await import("/tmp/ybrain.js"); console.log(typeof m.server)'
 ```
-
 应输出 `function`。如果失败，检查插件是否引入了无法打包的依赖。
+
+### 6. 本地（macOS）运行 sqlite-vec spike 报 "does not support dynamic extension loading"
+
+macOS 上 Bun 默认链接苹果系统的 SQLite，未开启扩展加载。需要 Homebrew 的 SQLite：
+
+```bash
+brew install sqlite   # 已安装可跳过
+# 从 https://github.com/asg017/sqlite-vec/releases 下载 loadable-macos-aarch64 包并解压出 vec0.dylib
+SQLITE_VEC_PATH=/path/to/vec0.dylib \
+CUSTOM_SQLITE_PATH=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib \
+  bun run packages/ybrain/deploy/spike/sqlite-vec.ts
+```
+
+`CUSTOM_SQLITE_PATH` 只用于 macOS 本地开发；Linux 容器不需要设置。
