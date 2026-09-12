@@ -40,6 +40,8 @@ RUN opencode --version
 
 COPY context/plugin /opt/ybrain/plugin
 COPY opencode.json /opt/ybrain/opencode.json
+# 票据 23：代理系统指令（回答规则 + 提炼规则）。opencode 会自动发现项目根的 AGENTS.md。
+COPY AGENTS.md /opt/ybrain/AGENTS.md
 
 WORKDIR /opt/ybrain
 ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]

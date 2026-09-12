@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from "bun:test"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
-import { moveNote, noteFileName, readNote, setDistilled, splitOriginal, writeNote } from "../src/vault"
+import { moveNote, newNoteId, noteFileName, readNote, setDistilled, splitOriginal, writeNote } from "../src/vault"
 import type { NoteFrontmatter } from "../src/frontmatter"
 
 // vault 读写（票据 22）：frontmatter 经编解码、PARA 移动、原文区保留、文件命名。
@@ -42,6 +42,16 @@ describe("noteFileName", () => {
     const first = noteFileName("202609061032-aaaa", "构建外脑")
     const second = noteFileName("202609061032-bbbb", "构建外脑")
     expect(first).not.toBe(second)
+  })
+})
+
+describe("newNoteId", () => {
+  it("uses the client's wall clock when a created time is supplied", () => {
+    expect(newNoteId("2026-01-02T03:04:05+08:00")).toMatch(/^202601020304-[a-z0-9]{4}$/)
+  })
+
+  it("falls back to the current time", () => {
+    expect(newNoteId()).toMatch(/^\d{12}-[a-z0-9]{4}$/)
   })
 })
 

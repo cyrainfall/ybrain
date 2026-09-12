@@ -3,6 +3,7 @@ import { mkdtemp } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { serveCapture } from "../src/capture"
+import { parseNote, type NoteFrontmatter } from "../src/frontmatter"
 
 // 捕获接口（票据 19）：通过真实 HTTP + 文件系统观察行为，不 mock 内部。
 // 验收：三渠道正确落盘、错令牌 401、无 url 无 body 400（见各切片）。
@@ -46,16 +47,9 @@ async function post(base: string, token: string | null, body: unknown) {
   })
 }
 
-// 解析 frontmatter（--- 之间的 YAML 行）为简单 key:value 字典；足够测试断言。
-function parseFrontmatter(text: string): Record<string, string> {
-  const m = text.match(/^---\n([\s\S]*?)\n---\n/)
-  if (!m || m[1] === undefined) throw new Error("no frontmatter")
-  const out: Record<string, string> = {}
-  for (const line of m[1].split("\n")) {
-    const i = line.indexOf(":")
-    if (i > 0) out[line.slice(0, i).trim()] = line.slice(i + 1).trim()
-  }
-  return out
+// 用与实现同一套 YAML 编解码读 frontmatter，避免测试自造解析器与实现漂移。
+function parseFrontmatter(text: string): NoteFrontmatter {
+  return parseNote(text).frontmatter
 }
 
 describe("capture endpoint /capture (ticket 19)", () => {
@@ -161,7 +155,7 @@ describe("capture endpoint /capture (ticket 19)", () => {
       const text = await Bun.file(path.join(vaultDir, String(json.path))).text()
       const fm = parseFrontmatter(text)
       expect(fm.url).toBe("http://127.0.0.1:1/unreachable")
-      expect(fm.fetch_failed).toBe("true")
+      expect(fm.fetch_failed).toBe(true)
       expect(text).toContain("http://127.0.0.1:1/unreachable")
 
       const job = JSON.parse((await Bun.file(path.join(dataDir, "jobs.jsonl")).text()).trim())

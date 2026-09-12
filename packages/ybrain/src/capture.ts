@@ -1,6 +1,7 @@
 import { appendFile, mkdir } from "node:fs/promises"
 import path from "node:path"
-import { noteFileName } from "./vault"
+import type { NoteFrontmatter } from "./frontmatter"
+import { deriveTitle, newNoteId, noteFileName, writeNote } from "./vault"
 
 // 捕获接口（票据 19）：Bun.serve 在 8787（仅 Tailscale 网卡由部署侧 compose 绑定）。
 // POST /capture：Bearer 渠道令牌 → 写 0-Inbox Markdown → 入 jobs.jsonl → 返回 note_id/path。
@@ -45,37 +46,35 @@ async function handleRequest(config: CaptureConfig, req: Request): Promise<Respo
   const clientCreated = hasText(body.created) ? new Date(body.created) : undefined
   const capturedAt = clientCreated && !Number.isNaN(clientCreated.getTime()) ? clientCreated : receivedAt
 
-  const stamp = stampOf(hasText(body.created) ? body.created : undefined, capturedAt)
-  const id = `${stamp}-${randomId(4)}`
-  const meta = {
+  const id = newNoteId(hasText(body.created) ? body.created : undefined)
+  const explicitTitle = hasText(body.title) ? body.title : undefined
+  const title = explicitTitle ?? deriveTitle(inline) ?? (url ? authorityOf(url) : undefined) ?? "untitled"
+  const relPath = `0-Inbox/${noteFileName(id, title)}`
+  const frontmatter: NoteFrontmatter = {
     id,
+    title,
     type: String(body.type ?? "note"),
     source: String(body.source ?? channel),
     url,
     author: hasText(body.author) ? body.author : undefined,
     created: capturedAt.toISOString(),
+    status: "inbox",
   }
-  const explicitTitle = hasText(body.title) ? body.title : undefined
-  const title = explicitTitle ?? firstLine(inline) ?? (url ? authorityOf(url) : undefined) ?? "untitled"
-  const relPath = `0-Inbox/${noteFileName(id, title)}`
-  const absPath = path.join(config.vaultDir, relPath)
-  await mkdir(path.dirname(absPath), { recursive: true })
 
   if (inline) {
-    await Bun.write(absPath, renderNote({ ...meta, title, body: inline }))
+    await writeNote(config.vaultDir, relPath, { frontmatter, body: inline })
   } else if (url) {
     // 先落盘仅链接笔记保证不丢，再同步抓取正文回填（票据 19：抓取失败标 fetch_failed）
-    await Bun.write(absPath, renderNote({ ...meta, title, body: linkOnly(url) }))
+    await writeNote(config.vaultDir, relPath, { frontmatter, body: linkOnly(url) })
     const article = await fetchArticle(url).catch(() => undefined)
-    await Bun.write(
-      absPath,
-      renderNote({
-        ...meta,
+    await writeNote(config.vaultDir, relPath, {
+      frontmatter: {
+        ...frontmatter,
         title: explicitTitle ?? article?.title ?? title,
-        body: article ? article.text : linkOnly(url),
-        fetchFailed: !article,
-      }),
-    )
+        ...(article ? {} : { fetch_failed: true }),
+      },
+      body: article ? article.text : linkOnly(url),
+    })
   }
 
   await enqueueJob(config, { noteId: id, type: "distill" })
@@ -90,13 +89,6 @@ function channelForToken(config: CaptureConfig, header: string | null): string |
 
 function hasText(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0
-}
-
-function firstLine(text: string | undefined): string | undefined {
-  return text
-    ?.split("\n")
-    .map((line) => line.trim())
-    .find((line) => line.length > 0)
 }
 
 // 返回 URL 的 authority（host 可含端口），用于缺省标题。
@@ -140,33 +132,6 @@ function collapseWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim()
 }
 
-function renderNote(args: {
-  id: string
-  title: string
-  type: string
-  source: string
-  url?: string
-  author?: string
-  created: string
-  body: string
-  fetchFailed?: boolean
-}): string {
-  const lines = ["---"]
-  lines.push(`id: ${args.id}`)
-  lines.push(`title: ${yamlQuote(args.title)}`)
-  lines.push(`type: ${args.type}`)
-  lines.push(`source: ${args.source}`)
-  if (args.url) lines.push(`url: ${args.url}`)
-  if (args.author) lines.push(`author: ${yamlQuote(args.author)}`)
-  lines.push(`created: ${args.created}`)
-  if (args.fetchFailed) lines.push(`fetch_failed: true`)
-  lines.push(`status: inbox`)
-  lines.push("---")
-  lines.push("")
-  lines.push(args.body)
-  return lines.join("\n") + "\n"
-}
-
 async function enqueueJob(config: CaptureConfig, job: { noteId: string; type: string }): Promise<void> {
   await mkdir(config.dataDir, { recursive: true })
   const record = {
@@ -179,29 +144,6 @@ async function enqueueJob(config: CaptureConfig, job: { noteId: string; type: st
     created_at: new Date().toISOString(),
   }
   await appendFile(path.join(config.dataDir, "jobs.jsonl"), JSON.stringify(record) + "\n")
-}
-
-// 客户端给了 created 时，文件名前缀取其自述的墙上时间（不跨时区换算）。
-function stampOf(created: string | undefined, fallback: Date): string {
-  const parsed = created?.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/)
-  if (parsed) return parsed.slice(1).join("")
-  return formatStamp(fallback)
-}
-
-function formatStamp(date: Date): string {
-  const p = (n: number) => String(n).padStart(2, "0")
-  return (
-    String(date.getFullYear()) + p(date.getMonth() + 1) + p(date.getDate()) + p(date.getHours()) + p(date.getMinutes())
-  )
-}
-
-function randomId(len: number): string {
-  const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-  return Array.from({ length: len }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join("")
-}
-
-function yamlQuote(value: string): string {
-  return value.includes(":") || value.includes("#") ? JSON.stringify(value) : value
 }
 
 function json(body: unknown, status: number): Response {

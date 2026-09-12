@@ -3,10 +3,13 @@ import path from "node:path"
 import { serveCapture } from "./capture"
 import { openIndex } from "./db"
 import { createIndexer } from "./indexer"
-import { createEmbedder } from "./siliconflow"
+import { createSearch } from "./search"
+import { createEmbedder, createReranker } from "./siliconflow"
+import { createTools } from "./tools"
 import { watchVault } from "./watcher"
 
-// 外脑插件入口：票据 17 骨架 + 票据 19 捕获接口 + 票据 22 数据层（索引、重建、变更监听）。
+// 外脑插件入口：票据 17 骨架 + 票据 19 捕获接口 + 票据 22 数据层
+// + 票据 23 四个原生知识工具（代理系统指令随镜像发在 /opt/ybrain/AGENTS.md）。
 export const server: Plugin = async () => {
   const vaultDir = process.env.YBRAIN_VAULT_DIR
   const dataDir = process.env.YBRAIN_DATA_DIR
@@ -22,39 +25,49 @@ export const server: Plugin = async () => {
   const configured = Boolean(process.env.DEEPSEEK_API_KEY && process.env.SILICONFLOW_API_KEY)
   console.log(`ybrain plugin loaded (configured=${configured})`)
 
-  const index = createIndex(vaultDir, dataDir)
-  if (index && vaultDir) {
+  const knowledge = createKnowledge(vaultDir, dataDir)
+  if (knowledge && vaultDir) {
     // 启动自跑：hash 命中即跳过，未变的笔记不会重复嵌入
-    index
+    knowledge
       .reindexAll()
       .then((result) => console.log(`ybrain reindex: ${JSON.stringify(result)}`))
       .catch((error) => console.error(`ybrain reindex failed: ${error}`))
-    watchVault({ vaultDir, onNoteChange: index.syncNote })
+    watchVault({ vaultDir, onNoteChange: knowledge.syncNote })
   }
 
   if (vaultDir && dataDir && Object.keys(validTokens).length > 0) {
-    serveCapture({ vaultDir, dataDir, tokens: validTokens, onReindex: index?.reindexAll })
+    serveCapture({ vaultDir, dataDir, tokens: validTokens, onReindex: knowledge?.reindexAll })
   }
 
   return {
     event: async () => {},
+    ...(knowledge ? { tool: knowledge.tools } : {}),
   }
 }
 
-// 向量扩展与模型密钥齐备时才启用索引能力；缺任一项则只保留捕获接口。
-function createIndex(vaultDir: string | undefined, dataDir: string | undefined) {
+// 向量扩展与模型密钥齐备时才启用索引、检索与知识工具；缺任一项则只保留捕获接口。
+function createKnowledge(vaultDir: string | undefined, dataDir: string | undefined) {
   const vecExtension = process.env.SQLITE_VEC_PATH
   const apiKey = process.env.SILICONFLOW_API_KEY
   if (!vaultDir || !dataDir || !vecExtension || !apiKey) {
     console.warn(
-      "ybrain index disabled (需要 YBRAIN_VAULT_DIR / YBRAIN_DATA_DIR / SQLITE_VEC_PATH / SILICONFLOW_API_KEY)",
+      "ybrain knowledge disabled (需要 YBRAIN_VAULT_DIR / YBRAIN_DATA_DIR / SQLITE_VEC_PATH / SILICONFLOW_API_KEY)",
     )
     return undefined
   }
+
   const db = openIndex({
     path: path.join(dataDir, "index.db"),
     vecExtension,
     customSqlitePath: process.env.CUSTOM_SQLITE_PATH,
   })
-  return createIndexer({ vaultDir, db, embedder: createEmbedder({ apiKey }) })
+  const embedder = createEmbedder({ apiKey })
+  const indexer = createIndexer({ vaultDir, db, embedder })
+  const search = createSearch({ db, embedder, reranker: createReranker({ apiKey }) })
+
+  return {
+    reindexAll: indexer.reindexAll,
+    syncNote: indexer.syncNote,
+    tools: createTools({ vaultDir, db, search: search.search, reindexNote: indexer.reindexNote }),
+  }
 }

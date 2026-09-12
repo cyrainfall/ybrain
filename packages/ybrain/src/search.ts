@@ -15,6 +15,8 @@ export type SearchHit = {
   rerank_score: number
 }
 
+export type SearchOptions = { k?: number; includeArchived?: boolean }
+
 export type SearchDeps = {
   db: Database
   embedder: Embedder
@@ -35,10 +37,12 @@ type Candidate = {
 export function createSearch(deps: SearchDeps) {
   const retrieveK = deps.retrieveK ?? 8
 
-  async function search(query: string, options: { k?: number } = {}): Promise<SearchHit[]> {
+  async function search(query: string, options: SearchOptions = {}): Promise<SearchHit[]> {
     const [queryVector] = await deps.embedder.embed([query])
     if (!queryVector) return []
 
+    // 存档笔记默认同等参与检索（时间胶囊靠检索唤醒）；显式排除时才加条件。
+    const archivedFilter = options.includeArchived === false ? "and n.status <> 'archived'" : ""
     const candidates = deps.db
       .query(
         `select c.text as snippet, c.note_id as note_id, n.title as title,
@@ -46,7 +50,7 @@ export function createSearch(deps: SearchDeps) {
          from vec_chunks v
          join chunks c on c.id = v.rowid
          join notes n on n.id = c.note_id
-         where v.embedding match ? and k = ?
+         where v.embedding match ? and k = ? ${archivedFilter}
          order by v.distance`,
       )
       .all(Buffer.from(new Float32Array(queryVector).buffer), retrieveK) as Candidate[]

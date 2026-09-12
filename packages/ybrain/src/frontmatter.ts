@@ -2,6 +2,10 @@ import matter from "gray-matter"
 
 // frontmatter 编解码（票据 22）：字段表见 .scratch/exobrain/prototypes/data-model.md。
 // 必填 id/title/type/source/created/status；其余按需出现。
+// data-model §2/§3 的取值域；工具入参用它约束代理，避免写出域外值。
+export const NOTE_TYPES = ["clip", "note", "weread", "card"] as const
+export const NOTE_STATUSES = ["inbox", "distilled", "archived"] as const
+
 export type NoteFrontmatter = {
   id: string
   title: string

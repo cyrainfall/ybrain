@@ -44,9 +44,18 @@ const wyckoff: NoteFrontmatter = {
   created: "2026-09-06T09:15:00.000Z",
   status: "distilled",
 }
+const archive: NoteFrontmatter = {
+  id: "202501010900-cccc",
+  title: "旧项目存档",
+  type: "note",
+  source: "manual",
+  created: "2025-01-01T09:00:00.000Z",
+  status: "archived",
+}
 const notes: Array<[NoteFrontmatter, string]> = [
   [brain, "外脑捕捉与检索：把看过的东西记住并能找回来。"],
   [wyckoff, "威科夫方法：spring 跌破支撑后的行为表现。"],
+  [archive, "已经归档的旧项目笔记，讲的是咖啡冲煮水温。"],
 ]
 
 async function setup() {
@@ -118,5 +127,16 @@ describeVec("检索", () => {
 
     expect(hits.length).toBeGreaterThan(0)
     for (const hit of hits) expect(hit.rerank_score).toBeLessThan(0.1)
+  })
+
+  it("includes archived notes by default and can exclude them on request", async () => {
+    const { search } = await setup()
+
+    const included = await search.search("咖啡冲煮水温")
+    expect(included[0]?.note_id).toBe(archive.id)
+    expect(included[0]?.status).toBe("archived")
+
+    const excluded = await search.search("咖啡冲煮水温", { includeArchived: false })
+    expect(excluded.map((hit) => hit.note_id)).not.toContain(archive.id)
   })
 })
