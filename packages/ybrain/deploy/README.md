@@ -121,12 +121,12 @@ bun -e '
 
 需要在仓库 Settings → Secrets and variables → Actions 配置 4 个 secret：
 
-| Secret           | 说明                       | 示例                                              |
-| ---------------- | -------------------------- | ------------------------------------------------- |
+| Secret         | 说明                       | 示例                                            |
+| -------------- | -------------------------- | ----------------------------------------------- |
 | `ACR_REGISTRY` | ACR 个人版访问域名         | `crpi-xxx.cn-hangzhou.personal.cr.aliyuncs.com` |
 | `ACR_IMAGE`    | 命名空间/镜像名            | `ybrain/ybrain`                                 |
-| `ACR_USERNAME` | ACR 用户名（阿里云账号名） | —                                                |
-| `ACR_PASSWORD` | ACR 固定密码               | —                                                |
+| `ACR_USERNAME` | ACR 用户名（阿里云账号名） | —                                               |
+| `ACR_PASSWORD` | ACR 固定密码               | —                                               |
 
 #### 6. 构建并推送镜像
 
@@ -154,6 +154,7 @@ docker buildx build \
 - 只有 `main` 分支才打 `latest`，dev 构建不会覆盖生产标签
 
 **关键参数：**
+
 - `--platform linux/amd64`：服务器是 x86_64
 - `--provenance=false`：**禁用 provenance 证明**。阿里云 ACR 个人版不支持 OCI 空清单（`application/vnd.oci.empty.v1+json`），不加这个会推送失败
 - `--cache-from/--cache-to type=gha`：用 GitHub Actions 缓存共享基础层，加速重复构建
@@ -199,6 +200,7 @@ ENV SQLITE_VEC_PATH=/opt/ybrain/extensions/vec0.so
 ```
 
 要点：
+
 - **git**：票据 25 在容器内向 Gitee 备份 vault 时使用；`safe.directory '*'` 是因为挂载进来的 vault 目录 owner 与容器内用户不同，不配置会被 git 以 "dubious ownership" 拒绝。部署密钥的挂载在票据 25 补
 - **sqlite-vec 0.1.9**：从 GitHub 官方 release 下载 linux-x86_64 可加载扩展，**用官方 checksums.txt 的 sha256 锁定**，安装到 `/opt/ybrain/extensions/vec0.so`
 - `SQLITE_VEC_PATH` 环境变量是票据 22 数据层加载扩展的约定路径
@@ -221,11 +223,13 @@ ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
 ```
 
 构建上下文（由 CI 组装到 `packages/ybrain/deploy/context/`）：
+
 - `context/opencode` — opencode 单文件二进制
 - `context/plugin/ybrain.js` — 打包后的 ybrain 插件
 - `opencode.json` — opencode 配置（指定加载哪个插件）
 
 镜像内最终结构：
+
 ```
 /opt/ybrain/
 ├── opencode.json          # 配置：加载 ./plugin/ybrain.js
@@ -238,6 +242,7 @@ ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
 容器启动命令：`opencode serve --port=4096 --hostname=0.0.0.0`。
 
 `opencode.json` 内容：
+
 ```json
 {
   "plugin": ["./plugin/ybrain.js"],
@@ -353,10 +358,12 @@ GitHub secrets `ACR_USERNAME` / `ACR_PASSWORD` 未配置或值为空。去仓库
 ### 5. 插件在容器里加载失败
 
 本地复现 CI 的打包和校验步骤：
+
 ```bash
 bun build packages/ybrain/src/index.ts --bundle --target=bun --outfile=/tmp/ybrain.js
 bun -e 'const m = await import("/tmp/ybrain.js"); console.log(typeof m.server)'
 ```
+
 应输出 `function`。如果失败，检查插件是否引入了无法打包的依赖。
 
 ### 6. 本地（macOS）运行 sqlite-vec spike 报 "does not support dynamic extension loading"

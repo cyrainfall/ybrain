@@ -33,9 +33,7 @@ const oneHot = (index: number) => {
 const insert = db.prepare("insert into vec_notes(rowid, embedding) values (?, ?)")
 for (let i = 0; i < 5; i++) insert.run(i + 1, Buffer.from(oneHot(i).buffer))
 
-const knn = db.prepare(
-  "select rowid, distance from vec_notes where embedding match ? order by distance limit 3"
-)
+const knn = db.prepare("select rowid, distance from vec_notes where embedding match ? order by distance limit 3")
 const rows = knn.all(Buffer.from(oneHot(2).buffer)) as { rowid: number; distance: number }[]
 console.log("knn result:", JSON.stringify(rows))
 
