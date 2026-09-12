@@ -38,9 +38,9 @@ async function open(): Promise<Database> {
 describeVec("SQLite 索引 schema", () => {
   it("creates the four tables", async () => {
     const db = await open()
-    const names = (
-      db.query("select name from sqlite_master where type = 'table'").all() as { name: string }[]
-    ).map((row) => row.name)
+    const names = (db.query("select name from sqlite_master where type = 'table'").all() as { name: string }[]).map(
+      (row) => row.name,
+    )
 
     expect(names).toContain("notes")
     expect(names).toContain("chunks")

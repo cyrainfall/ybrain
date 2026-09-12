@@ -62,8 +62,7 @@ async function setup() {
   return { vaultDir, db, indexer, embedder, write }
 }
 
-const countRows = (db: Database, sql: string, param: string) =>
-  (db.query(sql).get(param) as { n: number }).n
+const countRows = (db: Database, sql: string, param: string) => (db.query(sql).get(param) as { n: number }).n
 
 describeVec("索引器", () => {
   it("writes the note row, its chunks and their vectors", async () => {
@@ -97,9 +96,11 @@ describeVec("索引器", () => {
 
     expect(countRows(db, "select count(*) as n from chunks where note_id = ?", noteId)).toBe(3)
     expect(db.query("select count(*) as n from vec_chunks").get()).toEqual({ n: 3 })
-    const texts = (db.query("select text from chunks where note_id = ? order by ordinal").all(noteId) as {
-      text: string
-    }[]).map((row) => row.text)
+    const texts = (
+      db.query("select text from chunks where note_id = ? order by ordinal").all(noteId) as {
+        text: string
+      }[]
+    ).map((row) => row.text)
     expect(texts).toContain("## 第三节\n第三节内容")
   })
 
