@@ -4,6 +4,7 @@ import { noteFileName } from "./vault"
 
 // 捕获接口（票据 19）：Bun.serve 在 8787（仅 Tailscale 网卡由部署侧 compose 绑定）。
 // POST /capture：Bearer 渠道令牌 → 写 0-Inbox Markdown → 入 jobs.jsonl → 返回 note_id/path。
+// POST /reindex：同一令牌，触发全量重建索引（票据 22 的数据层，处理器由调用方注入）。
 // 详见 .scratch/exobrain/prototypes/capture-api.md 与 data-model.md。
 
 export type CaptureConfig = {
@@ -11,21 +12,28 @@ export type CaptureConfig = {
   dataDir: string
   tokens: Record<string, string>
   port?: number
+  onReindex?: () => Promise<Record<string, unknown>>
 }
 
 export function serveCapture(config: CaptureConfig) {
   return Bun.serve({
     port: config.port ?? 8787,
-    fetch: (req) => handleCapture(config, req),
+    fetch: (req) => handleRequest(config, req),
   })
 }
 
-async function handleCapture(config: CaptureConfig, req: Request): Promise<Response> {
-  if (req.method !== "POST" || new URL(req.url).pathname !== "/capture") {
+async function handleRequest(config: CaptureConfig, req: Request): Promise<Response> {
+  const pathname = new URL(req.url).pathname
+  if (req.method !== "POST" || (pathname !== "/capture" && pathname !== "/reindex")) {
     return json({ error: "not found" }, 404)
   }
   const channel = channelForToken(config, req.headers.get("Authorization"))
   if (!channel) return json({ error: "invalid token" }, 401)
+
+  if (pathname === "/reindex") {
+    if (!config.onReindex) return json({ error: "reindex unavailable" }, 503)
+    return json({ ok: true, ...(await config.onReindex()) }, 200)
+  }
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>
   const url = hasText(body.url) ? body.url : undefined

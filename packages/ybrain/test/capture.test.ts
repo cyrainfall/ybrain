@@ -17,12 +17,22 @@ afterEach(async () => {
 
 type Ctx = { base: string; vaultDir: string; dataDir: string }
 
-async function withServer<T>(fn: (ctx: Ctx) => Promise<T>): Promise<T> {
+async function withServer<T>(
+  fn: (ctx: Ctx) => Promise<T>,
+  extra: { onReindex?: () => Promise<Record<string, unknown>> } = {},
+): Promise<T> {
   const vaultDir = await mkdtemp(path.join(tmpdir(), "ybrain-vault-"))
   const dataDir = await mkdtemp(path.join(tmpdir(), "ybrain-data-"))
-  const server = serveCapture({ vaultDir, dataDir, tokens: channels, port: 0 })
+  const server = serveCapture({ vaultDir, dataDir, tokens: channels, port: 0, ...extra })
   servers.push(server)
   return fn({ base: `http://localhost:${server.port}`, vaultDir, dataDir })
+}
+
+async function postReindex(base: string, token: string | null) {
+  return fetch(`${base}/reindex`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  })
 }
 
 async function post(base: string, token: string | null, body: unknown) {
@@ -204,6 +214,50 @@ describe("capture endpoint /capture (ticket 19)", () => {
 
       const fm = parseFrontmatter(await Bun.file(path.join(vaultDir, String(json.path))).text())
       expect(fm.created).toBe(new Date(created).toISOString())
+    })
+  })
+})
+
+describe("reindex endpoint /reindex (ticket 22)", () => {
+  it("runs a full reindex for an authenticated request", async () => {
+    let calls = 0
+    await withServer(
+      async ({ base }) => {
+        const res = await postReindex(base, "tok-web")
+        expect(res.status).toBe(200)
+        expect(await res.json()).toEqual({ ok: true, indexed: 2, skipped: 1 })
+        expect(calls).toBe(1)
+      },
+      {
+        onReindex: async () => {
+          calls++
+          return { indexed: 2, skipped: 1 }
+        },
+      },
+    )
+  })
+
+  it("rejects an unauthenticated reindex with 401", async () => {
+    let calls = 0
+    await withServer(
+      async ({ base }) => {
+        expect((await postReindex(base, "wrong-token")).status).toBe(401)
+        expect((await postReindex(base, null)).status).toBe(401)
+        expect(calls).toBe(0)
+      },
+      {
+        onReindex: async () => {
+          calls++
+          return {}
+        },
+      },
+    )
+  })
+
+  it("reports reindex as unavailable when the index is not configured", async () => {
+    await withServer(async ({ base }) => {
+      const res = await postReindex(base, "tok-web")
+      expect(res.status).toBe(503)
     })
   })
 })

@@ -13,6 +13,8 @@ export type OpenIndexOptions = {
   customSqlitePath?: string
 }
 
+// 注意：建表用 create table if not exists，字段变更不会迁移旧库。
+// data/ 是可重建的索引层（vault 才是真相源）：改结构后删掉 index.db 重跑 reindex 即可。
 const SCHEMA = `
 create table if not exists notes (
   id text primary key,
@@ -20,6 +22,7 @@ create table if not exists notes (
   title text not null,
   type text not null,
   status text not null,
+  url text,
   tags text,
   hash text not null,
   mtime integer not null
