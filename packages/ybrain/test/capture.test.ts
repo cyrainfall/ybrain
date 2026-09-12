@@ -62,7 +62,7 @@ describe("capture endpoint /capture (ticket 19)", () => {
       const json = await res.json()
       expect(json.ok).toBe(true)
       expect(json.note_id).toMatch(/^\d{12}-[a-z0-9]{4}$/)
-      expect(json.path).toMatch(/^0-Inbox\/\d{12}-hello-world\.md$/)
+      expect(json.path).toMatch(/^0-Inbox\/\d{12}-[a-z0-9]{4}-hello-world\.md$/)
 
       const noteText = await Bun.file(path.join(vaultDir, String(json.path))).text()
       const fm = parseFrontmatter(noteText)
@@ -200,7 +200,7 @@ describe("capture endpoint /capture (ticket 19)", () => {
       expect(res.status).toBe(200)
       const json = await res.json()
       expect(json.note_id).toMatch(/^202601020304-[a-z0-9]{4}$/)
-      expect(json.path).toBe("0-Inbox/202601020304-backfilled.md")
+      expect(json.path).toMatch(/^0-Inbox\/202601020304-[a-z0-9]{4}-backfilled\.md$/)
 
       const fm = parseFrontmatter(await Bun.file(path.join(vaultDir, String(json.path))).text())
       expect(fm.created).toBe(new Date(created).toISOString())

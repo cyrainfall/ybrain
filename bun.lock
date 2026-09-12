@@ -1051,6 +1051,9 @@
     },
     "packages/ybrain": {
       "name": "ybrain",
+      "dependencies": {
+        "gray-matter": "4.0.3",
+      },
       "devDependencies": {
         "@opencode-ai/plugin": "workspace:*",
         "@tsconfig/bun": "catalog:",

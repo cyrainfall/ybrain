@@ -1,5 +1,6 @@
 import { appendFile, mkdir } from "node:fs/promises"
 import path from "node:path"
+import { noteFileName } from "./vault"
 
 // 捕获接口（票据 19）：Bun.serve 在 8787（仅 Tailscale 网卡由部署侧 compose 绑定）。
 // POST /capture：Bearer 渠道令牌 → 写 0-Inbox Markdown → 入 jobs.jsonl → 返回 note_id/path。
@@ -48,7 +49,7 @@ async function handleCapture(config: CaptureConfig, req: Request): Promise<Respo
   }
   const explicitTitle = hasText(body.title) ? body.title : undefined
   const title = explicitTitle ?? firstLine(inline) ?? (url ? authorityOf(url) : undefined) ?? "untitled"
-  const relPath = `0-Inbox/${stamp}-${slugify(title)}.md`
+  const relPath = `0-Inbox/${noteFileName(id, title)}`
   const absPath = path.join(config.vaultDir, relPath)
   await mkdir(path.dirname(absPath), { recursive: true })
 
@@ -189,14 +190,6 @@ function formatStamp(date: Date): string {
 function randomId(len: number): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789"
   return Array.from({ length: len }, () => chars.charAt(Math.floor(Math.random() * chars.length))).join("")
-}
-
-function slugify(title: string): string {
-  const slug = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-  return slug || "note"
 }
 
 function yamlQuote(value: string): string {
