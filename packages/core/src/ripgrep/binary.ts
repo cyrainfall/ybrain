@@ -8,6 +8,7 @@ import { makeGlobalNode } from "../effect/app-node"
 import { httpClient } from "../effect/app-node-platform"
 import { FSUtil } from "../fs-util"
 import { Global } from "../global"
+import { Flock } from "../util/flock"
 import { which } from "../util/which"
 
 export namespace RipgrepBinary {
@@ -56,13 +57,18 @@ export namespace RipgrepBinary {
         const dir = yield* fs.makeTempDirectoryScoped({ directory: Global.Path.bin, prefix: "ripgrep-" })
 
         if (config.extension === "zip") {
-          const shell = (yield* Effect.sync(() => which("powershell.exe") ?? which("pwsh.exe"))) ?? "powershell.exe"
-          const result = yield* run(shell, [
-            "-NoProfile",
-            "-NonInteractive",
-            "-Command",
-            `$global:ProgressPreference = 'SilentlyContinue'; Expand-Archive -LiteralPath '${archive.replaceAll("'", "''")}' -DestinationPath '${dir.replaceAll("'", "''")}' -Force`,
-          ])
+          // Windows 10+ ships bsdtar as System32\tar.exe, which reads zip archives and
+          // avoids PowerShell 5.1 Expand-Archive failures under parallel process load.
+          const tar = yield* Effect.sync(() => which("tar.exe"))
+          const powershell = (yield* Effect.sync(() => which("powershell.exe") ?? which("pwsh.exe"))) ?? "powershell.exe"
+          const result = yield* (tar
+            ? run(tar, ["-xf", archive, "-C", dir])
+            : run(powershell, [
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                `$global:ProgressPreference = 'SilentlyContinue'; Expand-Archive -LiteralPath '${archive.replaceAll("'", "''")}' -DestinationPath '${dir.replaceAll("'", "''")}' -Force`,
+              ]))
           if (result.code !== 0)
             throw new Error(
               result.stderr.trim() || result.stdout.trim() || `ripgrep extraction failed with code ${result.code}`,
@@ -103,20 +109,40 @@ export namespace RipgrepBinary {
 
             const filename = `ripgrep-${VERSION}-${config.platform}.${config.extension}`
             const url = `https://github.com/BurntSushi/ripgrep/releases/download/${VERSION}/${filename}`
-            const archive = path.join(Global.Path.bin, filename)
 
-            yield* Effect.logInfo("downloading ripgrep", { url })
             yield* fs.ensureDir(Global.Path.bin).pipe(Effect.orDie)
-            const bytes = yield* HttpClientRequest.get(url).pipe(
-              http.execute,
-              Effect.flatMap((response) => response.arrayBuffer),
-              Effect.mapError((cause) => (cause instanceof Error ? cause : new Error(String(cause)))),
-            )
-            if (bytes.byteLength === 0) throw new Error(`failed to download ripgrep from ${url}`)
 
-            yield* fs.writeWithDirs(archive, new Uint8Array(bytes))
-            yield* extract(archive, config, target)
-            yield* fs.remove(archive, { force: true }).pipe(Effect.ignore)
+            // Parallel processes (e.g. bun test workers) share Global.Path.bin; serialize
+            // installation so they cannot observe a half-written archive or destination.
+            yield* Effect.scoped(
+              Effect.gen(function* () {
+                yield* Flock.effect(`ripgrep-install-${VERSION}-${platformKey}`, {
+                  dir: Global.Path.bin,
+                  staleMs: 120_000,
+                  timeoutMs: 180_000,
+                })
+
+                // Another process may have completed the install while we waited.
+                if (yield* fs.isFile(target).pipe(Effect.orDie)) return
+
+                yield* Effect.logInfo("downloading ripgrep", { url })
+                const bytes = yield* HttpClientRequest.get(url).pipe(
+                  http.execute,
+                  Effect.flatMap((response) => response.arrayBuffer),
+                  Effect.mapError((cause) => (cause instanceof Error ? cause : new Error(String(cause)))),
+                )
+                if (bytes.byteLength === 0) throw new Error(`failed to download ripgrep from ${url}`)
+
+                // Unique temp archive prevents readers from seeing a partially written file.
+                const archive = yield* fs.makeTempFileScoped({
+                  directory: Global.Path.bin,
+                  prefix: "ripgrep-",
+                  suffix: `.${config.extension}`,
+                })
+                yield* fs.writeFile(archive, new Uint8Array(bytes))
+                yield* extract(archive, config, target)
+              }),
+            )
             return target
           }),
         ),
