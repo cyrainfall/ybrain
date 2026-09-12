@@ -60,15 +60,16 @@ export namespace RipgrepBinary {
           // Windows 10+ ships bsdtar as System32\tar.exe, which reads zip archives and
           // avoids PowerShell 5.1 Expand-Archive failures under parallel process load.
           const tar = yield* Effect.sync(() => which("tar.exe"))
-          const powershell = (yield* Effect.sync(() => which("powershell.exe") ?? which("pwsh.exe"))) ?? "powershell.exe"
-          const result = yield* (tar
+          const powershell =
+            (yield* Effect.sync(() => which("powershell.exe") ?? which("pwsh.exe"))) ?? "powershell.exe"
+          const result = yield* tar
             ? run(tar, ["-xf", archive, "-C", dir])
             : run(powershell, [
                 "-NoProfile",
                 "-NonInteractive",
                 "-Command",
                 `$global:ProgressPreference = 'SilentlyContinue'; Expand-Archive -LiteralPath '${archive.replaceAll("'", "''")}' -DestinationPath '${dir.replaceAll("'", "''")}' -Force`,
-              ]))
+              ])
           if (result.code !== 0)
             throw new Error(
               result.stderr.trim() || result.stdout.trim() || `ripgrep extraction failed with code ${result.code}`,
