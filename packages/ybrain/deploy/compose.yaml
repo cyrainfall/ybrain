@@ -6,15 +6,28 @@ services:
     image: headscale/headscale:0.26
     command: serve
     ports:
-      # 只发布控制面 8080/tcp。
+      # 只绑回环，仅供宿主调试（curl 127.0.0.1:8080）；公网入口是下面的 caddy:443。
       # 3478/udp（STUN）与 41641/udp（WireGuard 数据面）不由本容器监听：
       # 前者属于未启用的 embedded DERP，后者属于宿主机 tailscaled —— 容器占用会与它冲突。
-      # 安全组仍需对公网放行 8080/tcp 与 41641/udp（票据 09）。
-      - "8080:8080"
+      # 安全组仍需对公网放行 443/tcp、80/tcp 与 41641/udp。
+      - "127.0.0.1:8080:8080"
     volumes:
       - /opt/ybrain/headscale:/var/lib/headscale
-      # 票据 18：服务端配置（明文控制面、DERP 留空走直连，取舍见该文件头部注释）
+      # 票据 18：服务端配置（server_url 走 HTTPS、DERP 走官方 map，取舍见该文件头部注释）
       - /opt/ybrain/headscale/config.yaml:/etc/headscale/config.yaml:ro
+    mem_limit: 128m
+    restart: unless-stopped
+
+  caddy:
+    # 票据 18：控制面 TLS 终止。客户端首次登录后会强制改拨 443 并走 TLS，明文 8080 撑不住重连。
+    image: caddy:2
+    ports:
+      - "80:80" # ACME http-01（被拦时自动退回 tls-alpn-01）
+      - "443:443"
+    volumes:
+      - /opt/ybrain/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - /opt/ybrain/caddy/data:/data # 证书与 ACME 账户，务必保留
+      - /opt/ybrain/caddy/config:/config
     mem_limit: 128m
     restart: unless-stopped
 

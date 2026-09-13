@@ -1,12 +1,13 @@
 # headscale 服务端配置（票据 18）。挂进容器 /etc/headscale/config.yaml，数据在 /var/lib/headscale。
 #
 # 取舍说明（依据票据 09）：
-# - 控制面明文 HTTP（无域名、不备案），因此不能启用 embedded DERP（0.26 要求 server_url 走 HTTPS）；
-#   改用官方 DERP map（实测服务器可达）作为中继兜底，正常路径仍是 WireGuard 直连
-#   —— 服务器有公网 IP 且放行 UDP 41641，Mac/Android → 服务器的直连不依赖 DERP。
+# - 控制面走 HTTPS（Caddy 443 终止 TLS，见 ../caddy/Caddyfile）。必须如此：Tailscale 客户端首次
+#   登录成功后会强制改拨 443 并改用 TLS（客户端日志 forcing port 443 dial due to recent noise dial），
+#   明文 HTTP 只能撑过第一次连接，服务端一重启客户端就再也连不回来。
+# - 域名用 DuckDNS 免费子域名，未备案；DERP 仍走官方 map（实测服务器可达），正常路径是 WireGuard 直连。
 # - MagicDNS 关闭：MVP 用 tailnet IP 访问（http://<tailnet-ip>:4096），不让 headscale 接管客户端 DNS。
 
-server_url: http://120.25.146.106:8080
+server_url: https://cyx-ybrain.duckdns.org
 listen_addr: 0.0.0.0:8080
 metrics_listen_addr: 127.0.0.1:9090
 grpc_listen_addr: 127.0.0.1:50443

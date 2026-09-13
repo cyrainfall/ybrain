@@ -1,0 +1,17 @@
+# 控制面 TLS 终止（票据 18）。
+#
+# 为什么必须有它：Tailscale 客户端首次登录成功后，重建控制通道时会强制改拨 443
+# 并改用 TLS（客户端日志：controlhttp: forcing port 443 dial due to recent noise dial）。
+# 因此明文 http://<ip>:8080 只能撑过第一次连接，之后任何重连（含 headscale 重启）
+# 都会失败，客户端表现为「Logged out」并反复拉 /key；Android 端直接报 TLS forced。
+#
+# 证书走 Let's Encrypt 自动签发；Caddy 默认同时启用 http-01 与 tls-alpn-01，
+# 若 80 被云厂商拦截，tls-alpn-01 仍可经 443 完成校验。
+
+{
+	email cyrainfall@gmail.com
+}
+
+cyx-ybrain.duckdns.org {
+	reverse_proxy headscale:8080
+}

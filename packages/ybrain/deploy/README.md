@@ -262,17 +262,25 @@ ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
 ├── .env                 # 密钥，权限 600，不入 Git
 ├── vault/               # 笔记库（真相源，Git 备份到 Gitee）
 ├── data/                # SQLite 索引/jobs（可重建，不备份）
-└── headscale/           # headscale 配置（可重建，不备份）
+├── caddy/               # Caddyfile + data/（证书，务必保留）
+└── headscale/           # headscale 配置与 db（可重建，不备份）
 ```
 
 ### 容器编排
 
-两个服务：
+三个服务：
+
+**caddy**（控制面 TLS 终止，票据 18）
+
+- 镜像：`caddy:2`
+- 暴露端口：443（TCP）公网入口；80（TCP）留给 ACME http-01 兜底
+- 数据卷：`/opt/ybrain/caddy`（`data/` 存证书与 ACME 账户，**必须保留**，删掉会重新签发）
+- 内存限额：128MB
 
 **headscale**（Tailscale 控制面）
 
 - 镜像：`headscale/headscale:0.26`
-- 暴露端口：8080（TCP）、3478（UDP）、41641（UDP）— 公网可达
+- 暴露端口：`127.0.0.1:8080`（只绑回环，供宿主 curl 调试；公网入口是 caddy:443）
 - 内存限额：128MB
 - 数据卷：`/opt/ybrain/headscale`
 
@@ -286,7 +294,7 @@ ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
 - 环境变量：从 `.env` 加载，额外注入 `OPENCODE_SERVER_PASSWORD`
 - 内存限额：1.2GB
 
-> 注意：业务端口（4096、8787）通过 `${YBRAIN_TAILSCALE_IP}` 绑定到 Tailscale 虚拟网卡，公网不可达。公网只暴露 SSH(22) 和 headscale 三个端口。
+> 注意：业务端口（4096、8787）通过 `${YBRAIN_TAILSCALE_IP}` 绑定到 Tailscale 虚拟网卡，公网不可达。公网只暴露 SSH(22)、caddy(443/80) 与 WireGuard 数据面(41641/udp)。
 
 ### .env 配置项
 
@@ -303,9 +311,10 @@ YBRAIN_VAULT_REMOTE=            # 票据 25：Gitee 私有仓库 SSH 地址；�
 ### 部署命令
 
 ```bash
-sudo mkdir -p /opt/ybrain && cd /opt/ybrain
-# 从仓库拷贝 compose.yaml 和 .env.example
+sudo mkdir -p /opt/ybrain/{caddy/data,caddy/config} && cd /opt/ybrain
+# 从仓库拷贝 compose.yaml、Caddyfile 和 .env.example
 sudo cp <repo>/packages/ybrain/deploy/{compose.yaml,.env.example} .
+sudo cp <repo>/packages/ybrain/deploy/caddy/Caddyfile caddy/Caddyfile
 sudo cp .env.example .env && sudo chmod 600 .env
 # 编辑 .env 填入上述配置项
 sudo docker compose pull
@@ -320,26 +329,35 @@ sudo docker logs ybrain --tail 20   # 应看到 "ybrain plugin loaded (configure
 
 ### headscale 组网（票据 18）
 
-1. 上传 [compose.yaml](compose.yaml) 与 [headscale/config.yaml](headscale/config.yaml) 到 `/opt/ybrain/`（配置落在 `/opt/ybrain/headscale/config.yaml`），然后启动：
+1. 域名与 DNS：把一个（子）域名的 A 记录指向服务器公网 IP。本部署用 DuckDNS 免费子域名：
+   `cyx-ybrain.duckdns.org` → `120.25.146.106`。若域名挂在 Cloudflare 且开了橙云代理，必须先关掉，否则 ACME 校验被挡。
+2. 上传 [compose.yaml](compose.yaml)、[headscale/config.yaml](headscale/config.yaml) 与 [caddy/Caddyfile](caddy/Caddyfile)（后者需改域名与 ACME 邮箱），把 `config.yaml` 里的 `server_url` 改成 `https://<域名>`，然后启动：
    ```bash
-   cd /opt/ybrain && docker compose up -d headscale
-   curl -s http://127.0.0.1:8080/health        # 期望 {"status":"pass"}
+   cd /opt/ybrain && docker compose up -d headscale caddy
+   curl -s http://127.0.0.1:8080/health     # 期望 {"status":"pass"}
+   curl -s https://<域名>/health            # 期望 {"status":"pass"}，证书由 Caddy 自动签发
    ```
-2. 建用户与预认证密钥（0.26 的 `--user` 收数字 ID，不是用户名）：
+3. 建用户与预认证密钥（0.26 的 `--user` 收数字 ID，不是用户名）：
    ```bash
    docker exec ybrain-headscale-1 headscale users create ybrain
    docker exec ybrain-headscale-1 headscale preauthkeys create --user 1 --reusable --expiration 24h
    ```
-3. 宿主机入网（`--accept-dns=false` 避免 tailscale 改宿主机 DNS）：
+4. 宿主机入网（`--accept-dns=false` 避免 tailscale 改宿主机 DNS）：
    ```bash
    curl -fsSL https://pkgs.tailscale.com/stable/rhel/8/tailscale.repo -o /etc/yum.repos.d/tailscale.repo
    dnf -y install tailscale && systemctl enable --now tailscaled
-   tailscale up --login-server http://127.0.0.1:8080 --authkey <key> --hostname ybrain-server --accept-dns=false
+   tailscale up --login-server https://<域名> --authkey <key> --hostname ybrain-server --accept-dns=false
    ```
-4. **必须关闭 tailscale 的 netfilter 管理**：
+5. **必须关闭 tailscale 的 netfilter 管理**：
    ```bash
    tailscale set --netfilter-mode=off
    ```
+
+#### 为什么控制面必须走 HTTPS（重要，别跳过）
+
+Tailscale 客户端首次登录成功后，重建控制通道时会强制改拨 443 并改用 TLS（客户端日志：`controlhttp: forcing port 443 dial due to recent noise dial`）。所以明文 `http://<ip>:8080` **只能撑过第一次连接**：headscale 一重启，客户端就再也连不回来，表现为 `Logged out` 并每 5～12 秒拉一次 `/key` 后放弃；Android 端直接报 `HTTP: TLS forced: no port 80 dialed`。
+
+证书由 Caddy 自动申请（Let's Encrypt），默认同时尝试 http-01 与 tls-alpn-01；实测本环境走的是 **tls-alpn-01**，80 端口没用上。`/opt/ybrain/caddy/data` 存证书与 ACME 账户，别删。
 
 #### 为什么必须关掉 netfilter（重要，别跳过）
 
@@ -353,7 +371,26 @@ tailscaled 默认安装反欺骗规则：
 
 `netfilter-mode=off` 让 tailscaled 不再碰 iptables（该设置持久化在 tailscaled 状态里，重启后保留）。纯客户端节点上关闭它是安全的：tailscale0 的入站仍由 INPUT 默认策略（ACCEPT）放行，本机也不做 subnet router 转发。
 
-5. 安全组放行 TCP 8080 与 UDP 41641；业务端口（4096/8787）不加规则，只绑 tailnet。
+6. 安全组放行 TCP 443（控制面）与 UDP 41641（WireGuard 数据面）；80 仅在证书回退 http-01 时需要。业务端口（4096/8787）不加规则，只绑 tailnet。
+7. Mac 入网：
+   ```bash
+   brew install --cask tailscale-app
+   # 首次打开 App 并在「系统设置 → 隐私与安全性」放行系统扩展，然后：
+   /Applications/Tailscale.app/Contents/MacOS/Tailscale up \
+     --login-server=https://<域名> \
+     --authkey <key> --hostname mac-cyx --accept-dns=false --force-reauth
+   ```
+
+   > 这条命令必须在登录用户自己的终端里执行。macOS 版 CLI 通过 GUI 进程取凭据，在 root 会话或受限沙箱里跑会报 `CLI credentials are not available`。切换控制面地址后加 `--force-reauth` 才会重新注册。
+
+8. Android 入网（入口在账户页里，与官方文档同一路径）：右上角头像 → Settings → 点顶部已登录账号那一行进入 **Accounts** → 右上角 **⋮** → **Use an alternate server**，填 `https://<域名>`（弹出的浏览器登录页可关掉）→ 再次进 **Accounts** → **⋮** → **Use an auth key**，粘贴预认证密钥 → 回主页点 Connect。
+   > 设备名带空格/中文时 headscale 会改成 `invalid-xxxxxx` 之类的占位名（实测「Xiaomi 14」被规范成 `xiaomi14`），需要时用 `headscale nodes rename -i <id> <name>` 修。
+
+9. 验收互通（`tailscale ping` 先报 DERP 中转、随后升级直连属正常）：
+   ```bash
+   docker exec ybrain-headscale-1 headscale nodes list        # 三端都 online
+   tailscale ping -c 3 mac-cyx                                # pong ... via <公网 ip:port>
+   ```
 
 ### Gitee 备份与 Mac 端（票据 25）
 
