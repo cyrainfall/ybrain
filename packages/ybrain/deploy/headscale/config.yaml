@@ -1,0 +1,60 @@
+# headscale 服务端配置（票据 18）。挂进容器 /etc/headscale/config.yaml，数据在 /var/lib/headscale。
+#
+# 取舍说明（依据票据 09）：
+# - 控制面明文 HTTP（无域名、不备案），因此不能启用 embedded DERP（0.26 要求 server_url 走 HTTPS）；
+#   改用官方 DERP map（实测服务器可达）作为中继兜底，正常路径仍是 WireGuard 直连
+#   —— 服务器有公网 IP 且放行 UDP 41641，Mac/Android → 服务器的直连不依赖 DERP。
+# - MagicDNS 关闭：MVP 用 tailnet IP 访问（http://<tailnet-ip>:4096），不让 headscale 接管客户端 DNS。
+
+server_url: http://120.25.146.106:8080
+listen_addr: 0.0.0.0:8080
+metrics_listen_addr: 127.0.0.1:9090
+grpc_listen_addr: 127.0.0.1:50443
+grpc_allow_insecure: false
+
+noise:
+  private_key_path: /var/lib/headscale/noise_private.key
+
+prefixes:
+  v4: 100.64.0.0/10
+  v6: fd7a:115c:a1e0::/48
+  allocation: sequential
+
+derp:
+  server:
+    enabled: false
+  urls:
+    - https://controlplane.tailscale.com/derpmap/default
+  paths: []
+  auto_update_enabled: true
+  update_frequency: 24h
+
+disable_check_updates: true
+ephemeral_node_inactivity_timeout: 30m
+
+database:
+  type: sqlite
+  sqlite:
+    path: /var/lib/headscale/db.sqlite
+    write_ahead_log: true
+
+log:
+  format: text
+  level: info
+
+policy:
+  mode: file
+  path: ""
+
+dns:
+  magic_dns: false
+  override_local_dns: false
+  nameservers:
+    global: []
+  search_domains: []
+  extra_records: []
+
+logtail:
+  enabled: false
+
+randomize_client_port: false

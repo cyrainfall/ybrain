@@ -6,16 +6,22 @@ services:
     image: headscale/headscale:0.26
     command: serve
     ports:
+      # 只发布控制面 8080/tcp。
+      # 3478/udp（STUN）与 41641/udp（WireGuard 数据面）不由本容器监听：
+      # 前者属于未启用的 embedded DERP，后者属于宿主机 tailscaled —— 容器占用会与它冲突。
+      # 安全组仍需对公网放行 8080/tcp 与 41641/udp（票据 09）。
       - "8080:8080"
-      - "3478:3478/udp"
-      - "41641:41641/udp"
     volumes:
       - /opt/ybrain/headscale:/var/lib/headscale
+      # 票据 18：服务端配置（明文控制面、DERP 留空走直连，取舍见该文件头部注释）
+      - /opt/ybrain/headscale/config.yaml:/etc/headscale/config.yaml:ro
     mem_limit: 128m
     restart: unless-stopped
 
   ybrain:
-    image: ${YBRAIN_IMAGE}
+    # 真实镜像由 CI 构建后写入 .env 的 YBRAIN_IMAGE（票据 17）；
+    # 占位默认值只为让「只启动 headscale」（票据 18）时 compose 校验通过
+    image: ${YBRAIN_IMAGE:-ybrain-pending:local}
     ports:
       # Web 界面与捕获接口仅绑 Tailscale 网卡，公网不可达
       - "${YBRAIN_TAILSCALE_IP}:4096:4096"

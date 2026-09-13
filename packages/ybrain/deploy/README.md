@@ -318,6 +318,43 @@ sudo docker logs ybrain --tail 20   # 应看到 "ybrain plugin loaded (configure
 - Web 界面：`http://<tailnet-ip>:4096`（密码 = `OPENCODE_SERVER_PASSWORD`）
 - 捕获接口：`http://<tailnet-ip>:8787`（POST `/capture`，Bearer 渠道令牌）
 
+### headscale 组网（票据 18）
+
+1. 上传 [compose.yaml](compose.yaml) 与 [headscale/config.yaml](headscale/config.yaml) 到 `/opt/ybrain/`（配置落在 `/opt/ybrain/headscale/config.yaml`），然后启动：
+   ```bash
+   cd /opt/ybrain && docker compose up -d headscale
+   curl -s http://127.0.0.1:8080/health        # 期望 {"status":"pass"}
+   ```
+2. 建用户与预认证密钥（0.26 的 `--user` 收数字 ID，不是用户名）：
+   ```bash
+   docker exec ybrain-headscale-1 headscale users create ybrain
+   docker exec ybrain-headscale-1 headscale preauthkeys create --user 1 --reusable --expiration 24h
+   ```
+3. 宿主机入网（`--accept-dns=false` 避免 tailscale 改宿主机 DNS）：
+   ```bash
+   curl -fsSL https://pkgs.tailscale.com/stable/rhel/8/tailscale.repo -o /etc/yum.repos.d/tailscale.repo
+   dnf -y install tailscale && systemctl enable --now tailscaled
+   tailscale up --login-server http://127.0.0.1:8080 --authkey <key> --hostname ybrain-server --accept-dns=false
+   ```
+4. **必须关闭 tailscale 的 netfilter 管理**：
+   ```bash
+   tailscale set --netfilter-mode=off
+   ```
+
+#### 为什么必须关掉 netfilter（重要，别跳过）
+
+tailscaled 默认安装反欺骗规则：
+
+```
+-A ts-input -s 100.64.0.0/10 ! -i tailscale0 -j DROP
+```
+
+而阿里云的内网服务地址——云助手/元数据 `100.100.100.10`、`100.100.100.200`，内网 OSS `100.118.78.x`——都落在 `100.64.0.0/10` 内、从 eth0 进来，于是被整段丢弃。症状：云助手命令永远 `Pending`、workbench 与控制台远程连接超时、内网 OSS 下载报 `context deadline exceeded`。
+
+`netfilter-mode=off` 让 tailscaled 不再碰 iptables（该设置持久化在 tailscaled 状态里，重启后保留）。纯客户端节点上关闭它是安全的：tailscale0 的入站仍由 INPUT 默认策略（ACCEPT）放行，本机也不做 subnet router 转发。
+
+5. 安全组放行 TCP 8080 与 UDP 41641；业务端口（4096/8787）不加规则，只绑 tailnet。
+
 ### Gitee 备份与 Mac 端（票据 25）
 
 vault 是唯一不可重建的数据，靠 Git 三副本（服务器 / Mac / Gitee）兜底。SQLite 索引与 jobs 不备份，恢复时 reindex 重建。
