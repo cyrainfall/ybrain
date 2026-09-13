@@ -81,6 +81,7 @@ async function setup({ seed = true }: { seed?: boolean } = {}) {
     db,
     search: (query, options) => search.search(query, options),
     reindexNote: (relPath) => indexer.reindexNote(relPath),
+    distillModel: "deepseek/deepseek-v4-flash",
   })
   return { vaultDir, db, tools, indexer }
 }
@@ -184,6 +185,42 @@ describeVec("list_inbox", () => {
     expect(inbox).toHaveLength(1)
     expect(inbox[0].note_id).toBe(brain.id)
     expect(inbox[0].path).toBe(brainPath)
+    expect(inbox[0].dead).toBe(false)
+  })
+
+  it("flags notes whose distill job is dead so the UI can mark them red (C5)", async () => {
+    const { vaultDir, db, tools } = await setup()
+    db.prepare(
+      `insert into jobs (id, note_id, type, status, retries, error, created_at, run_after, started_at)
+       values ('job-dead', ?, 'distill', 'dead', 3, '模型 500', '2026-09-13T00:00:00.000Z', 0, null)`,
+    ).run(brain.id)
+
+    const inbox = JSON.parse(asText(await tools.list_inbox.execute({}, context(vaultDir))))
+    expect(inbox[0].dead).toBe(true)
+  })
+
+  it("returns every 0-Inbox note and marks feedback so the distill flow can skip it", async () => {
+    const { vaultDir, tools } = await setup()
+    const feedback = {
+      id: "202609101200-ffff",
+      title: "抱怨检索太慢",
+      type: "note",
+      source: "agent",
+      created: "2026-09-10T12:00:00.000Z",
+      status: "inbox",
+      kind: "feedback",
+    } satisfies NoteFrontmatter
+    await mkdir(path.join(vaultDir, "0-Inbox", "feedback"), { recursive: true })
+    await Bun.write(
+      path.join(vaultDir, "0-Inbox", "feedback", noteFileName(feedback.id, feedback.title)),
+      serializeNote(feedback, "希望检索能更快。"),
+    )
+
+    // 契约要求返回 0-Inbox 下全部笔记；反馈笔记用 kind 区分，由队列决定不提炼它
+    const inbox = JSON.parse(asText(await tools.list_inbox.execute({}, context(vaultDir))))
+    const item = inbox.find((note: { note_id: string }) => note.note_id === feedback.id)
+    expect(item.kind).toBe("feedback")
+    expect(inbox).toHaveLength(2)
   })
 
   it("says the inbox is empty when there is nothing to distil", async () => {
@@ -251,9 +288,34 @@ describeVec("save_note", () => {
     expect(written.frontmatter.summary).toBe("一句话摘要")
     expect(written.frontmatter.tags).toEqual(["外脑"])
     expect(written.frontmatter.status).toBe("distilled")
+    expect(written.frontmatter.distill_model).toBe("deepseek/deepseek-v4-flash")
+    expect(written.frontmatter.distilled_at).toMatch(/^\d{4}-\d{2}-\d{2}T/)
     expect(written.body).toContain("提炼后的要点")
     expect(written.body).not.toContain("把看过的东西记住")
     expect(written.body).toContain("## 原文\n原始剪藏正文。")
     expect(await Bun.file(path.join(vaultDir, brainPath)).exists()).toBe(false)
+  })
+
+  it("files feedback notes under 0-Inbox/feedback with kind: feedback", async () => {
+    const { vaultDir, tools } = await setup()
+
+    const created = JSON.parse(
+      asText(
+        await tools.save_note.execute(
+          {
+            title: "希望周复盘能自动归档",
+            folder: "0-Inbox/feedback",
+            body: "来源笔记 202609061032-aaaa：用户抱怨每周都要手动归档。",
+          },
+          context(vaultDir),
+        ),
+      ),
+    )
+
+    expect(created.path).toMatch(/^0-Inbox\/feedback\//)
+    const written = parseNote(await Bun.file(path.join(vaultDir, created.path)).text())
+    expect(written.frontmatter.kind).toBe("feedback")
+    expect(written.frontmatter.source).toBe("agent")
+    expect(written.frontmatter.status).toBe("inbox")
   })
 })

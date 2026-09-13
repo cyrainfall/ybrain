@@ -23,6 +23,9 @@ export type NoteFrontmatter = {
   book?: string
   chapter?: string
   fetch_failed?: boolean
+  // kind 标记非知识笔记的用途：feedback=自我改进回路的抱怨/愿望（票据 24 预留，票据 27 启用回路）；
+  // weekly-review=代理周复盘产出。不写 kind 的普通笔记走提炼流程。
+  kind?: string
 }
 
 export function parseNote(text: string): { frontmatter: NoteFrontmatter; body: string } {

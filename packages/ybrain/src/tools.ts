@@ -3,6 +3,7 @@ import { tool } from "@opencode-ai/plugin"
 import type { Database } from "bun:sqlite"
 import path from "node:path"
 import { NOTE_STATUSES, NOTE_TYPES, parseNote, type NoteFrontmatter } from "./frontmatter"
+import { deadNoteIds } from "./queue"
 import type { SearchHit, SearchOptions } from "./search"
 import {
   deriveTitle,
@@ -24,7 +25,12 @@ export type ToolDeps = {
   db: Database
   search: (query: string, options?: SearchOptions) => Promise<SearchHit[]>
   reindexNote: (relPath: string) => Promise<string>
+  // 提炼模型名，写进 distilled 笔记的 distill_model 字段（溯源用）。
+  distillModel?: string
 }
+
+// 反馈笔记的专用落点（票据 24 为票据 27 自我改进回路预留）。
+const FEEDBACK_FOLDER = "0-Inbox/feedback"
 
 export function createTools(deps: ToolDeps) {
   return {
@@ -77,7 +83,9 @@ function getNote(deps: ToolDeps): ToolDefinition {
 
 function listInbox(deps: ToolDeps): ToolDefinition {
   return tool({
-    description: "列出收件箱（0-Inbox）里尚未提炼的笔记摘要，用于「我有什么没处理的」类问题与提炼流程。",
+    description:
+      "列出收件箱（0-Inbox）里的笔记摘要，用于「我有什么没处理的」类问题与提炼流程。" +
+      "返回契约内的全部收件箱笔记，kind: feedback 的反馈笔记也在其中（供票据 27 自我改进回路，不参与提炼）。",
     args: {},
     async execute() {
       const paths = (await Array.fromAsync(new Bun.Glob("0-Inbox/**/*.md").scan({ cwd: deps.vaultDir }))).sort()
@@ -91,11 +99,14 @@ function listInbox(deps: ToolDeps): ToolDefinition {
             source: frontmatter.source,
             created: frontmatter.created,
             path: relPath,
+            kind: frontmatter.kind,
           }
         }),
       )
       if (notes.length === 0) return "收件箱是空的。"
-      return JSON.stringify(notes, null, 2)
+      // dead 任务随收件箱返回，供界面标红（验收 C5）；队列状态不是笔记属性，只做读取时拼接。
+      const dead = deadNoteIds(deps.db)
+      return JSON.stringify(notes.map((note) => ({ ...note, dead: dead.has(note.note_id) })), null, 2)
     },
   })
 }
@@ -112,6 +123,10 @@ function saveNote(deps: ToolDeps): ToolDefinition {
         .enum(PARA_FOLDERS)
         .optional()
         .describe("移动到 PARA 目录；不填则留在原目录（新建时落 0-Inbox）"),
+      folder: tool.schema
+        .enum([FEEDBACK_FOLDER])
+        .optional()
+        .describe("仅新建反馈笔记时使用：落 0-Inbox/feedback，系统自动标记 kind: feedback"),
       frontmatter_patch: tool.schema
         .object({
           summary: tool.schema.string().optional(),
@@ -136,6 +151,8 @@ function saveNote(deps: ToolDeps): ToolDefinition {
           ...patch,
           ...(args.title ? { title: args.title } : {}),
           distilled_at: new Date().toISOString(),
+          // 只有真正完成提炼（status 翻 distilled）才记录模型，代理的普通改不动它。
+          ...(patch.status === "distilled" && deps.distillModel ? { distill_model: deps.distillModel } : {}),
         }
         const body = args.body === undefined ? existing.body : setDistilled(existing.body, args.body)
         // 目标目录与当前不同才移动；moveNote 用原名，正文与原文区不受影响
@@ -149,7 +166,8 @@ function saveNote(deps: ToolDeps): ToolDefinition {
 
       const id = newNoteId()
       const title = args.title ?? deriveTitle(args.body) ?? "untitled"
-      const relPath = `${args.para_folder ?? "0-Inbox"}/${noteFileName(id, title)}`
+      const folder = args.folder ?? args.para_folder ?? "0-Inbox"
+      const relPath = `${folder}/${noteFileName(id, title)}`
       const frontmatter: NoteFrontmatter = {
         id,
         title,
@@ -157,6 +175,7 @@ function saveNote(deps: ToolDeps): ToolDefinition {
         source: "agent",
         created: new Date().toISOString(),
         status: "inbox",
+        ...(args.folder === FEEDBACK_FOLDER ? { kind: "feedback" } : {}),
         ...patch,
       }
       await writeNote(deps.vaultDir, relPath, { frontmatter, body: args.body ?? "" })

@@ -1,18 +1,19 @@
-import { appendFile, mkdir } from "node:fs/promises"
-import path from "node:path"
 import type { NoteFrontmatter } from "./frontmatter"
+import { JOB_TYPE_DISTILL } from "./queue"
 import { deriveTitle, newNoteId, noteFileName, writeNote } from "./vault"
 
 // 捕获接口（票据 19）：Bun.serve 在 8787（仅 Tailscale 网卡由部署侧 compose 绑定）。
-// POST /capture：Bearer 渠道令牌 → 写 0-Inbox Markdown → 入 jobs.jsonl → 返回 note_id/path。
+// POST /capture：Bearer 渠道令牌 → 写 0-Inbox Markdown → 入 SQLite jobs 队列（票据 24）→ 返回 note_id/path。
 // POST /reindex：同一令牌，触发全量重建索引（票据 22 的数据层，处理器由调用方注入）。
 // 详见 .scratch/exobrain/prototypes/capture-api.md 与 data-model.md。
 
 export type CaptureConfig = {
   vaultDir: string
-  dataDir: string
   tokens: Record<string, string>
   port?: number
+  // 入队处理器由总装注入（SQLite jobs 表）；入队失败不影响捕获——
+  // 笔记已在收件箱，调度器启动对账（reconcileInbox）会补排。
+  enqueue: (job: { noteId: string; type: string }) => Promise<void> | void
   onReindex?: () => Promise<Record<string, unknown>>
 }
 
@@ -77,7 +78,10 @@ async function handleRequest(config: CaptureConfig, req: Request): Promise<Respo
     })
   }
 
-  await enqueueJob(config, { noteId: id, type: "distill" })
+  // 入队失败不阻塞捕获：笔记已在收件箱，调度器对账会补排
+  await Promise.resolve(config.enqueue({ noteId: id, type: JOB_TYPE_DISTILL })).catch((error) =>
+    console.error(`ybrain capture enqueue failed for ${id}: ${error}`),
+  )
   return json({ ok: true, note_id: id, path: relPath }, 200)
 }
 
@@ -130,20 +134,6 @@ function decodeEntities(text: string): string {
 
 function collapseWhitespace(text: string): string {
   return text.replace(/\s+/g, " ").trim()
-}
-
-async function enqueueJob(config: CaptureConfig, job: { noteId: string; type: string }): Promise<void> {
-  await mkdir(config.dataDir, { recursive: true })
-  const record = {
-    id: crypto.randomUUID(),
-    note_id: job.noteId,
-    type: job.type,
-    status: "queued",
-    retries: 0,
-    error: null,
-    created_at: new Date().toISOString(),
-  }
-  await appendFile(path.join(config.dataDir, "jobs.jsonl"), JSON.stringify(record) + "\n")
 }
 
 function json(body: unknown, status: number): Response {

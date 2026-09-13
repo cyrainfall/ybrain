@@ -16,17 +16,26 @@ afterEach(async () => {
   servers.length = 0
 })
 
-type Ctx = { base: string; vaultDir: string; dataDir: string }
+type Ctx = { base: string; vaultDir: string; enqueued: Array<{ noteId: string; type: string }> }
 
 async function withServer<T>(
   fn: (ctx: Ctx) => Promise<T>,
-  extra: { onReindex?: () => Promise<Record<string, unknown>> } = {},
+  extra: {
+    onReindex?: () => Promise<Record<string, unknown>>
+    enqueue?: (job: { noteId: string; type: string }) => Promise<void> | void
+  } = {},
 ): Promise<T> {
   const vaultDir = await mkdtemp(path.join(tmpdir(), "ybrain-vault-"))
-  const dataDir = await mkdtemp(path.join(tmpdir(), "ybrain-data-"))
-  const server = serveCapture({ vaultDir, dataDir, tokens: channels, port: 0, ...extra })
+  const enqueued: Array<{ noteId: string; type: string }> = []
+  const server = serveCapture({
+    vaultDir,
+    tokens: channels,
+    port: 0,
+    enqueue: extra.enqueue ?? ((job) => void enqueued.push(job)),
+    onReindex: extra.onReindex,
+  })
   servers.push(server)
-  return fn({ base: `http://localhost:${server.port}`, vaultDir, dataDir })
+  return fn({ base: `http://localhost:${server.port}`, vaultDir, enqueued })
 }
 
 async function postReindex(base: string, token: string | null) {
@@ -54,7 +63,7 @@ function parseFrontmatter(text: string): NoteFrontmatter {
 
 describe("capture endpoint /capture (ticket 19)", () => {
   it("writes an inbox note + enqueues a distill job for a valid web capture", async () => {
-    await withServer(async ({ base, vaultDir, dataDir }) => {
+    await withServer(async ({ base, vaultDir, enqueued }) => {
       const res = await post(base, "tok-web", {
         source: "web",
         type: "note",
@@ -78,13 +87,21 @@ describe("capture endpoint /capture (ticket 19)", () => {
       expect(fm.created).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)
       expect(noteText).toContain("first capture body")
 
-      const jobs = (await Bun.file(path.join(dataDir, "jobs.jsonl")).text()).trim().split("\n")
-      expect(jobs.length).toBe(1)
-      const job = JSON.parse(jobs[0]!)
-      expect(job.note_id).toBe(json.note_id)
-      expect(job.type).toBe("distill")
-      expect(job.status).toBe("queued")
+      // 票据 24：落盘即入 SQLite 队列入队钩子（幂等由队列层负责）
+      expect(enqueued).toEqual([{ noteId: json.note_id, type: "distill" }])
     })
+  })
+
+  it("still returns 200 and keeps the note when enqueueing fails (inbox is the source of truth)", async () => {
+    await withServer(
+      async ({ base, vaultDir }) => {
+        const res = await post(base, "tok-web", { source: "web", type: "note", title: "x", body: "y" })
+        expect(res.status).toBe(200)
+        const json = await res.json()
+        expect(await Bun.file(path.join(vaultDir, String(json.path))).exists()).toBe(true)
+      },
+      { enqueue: async () => Promise.reject(new Error("queue unavailable")) },
+    )
   })
 
   it("rejects a wrong bearer token with 401", async () => {
@@ -102,12 +119,12 @@ describe("capture endpoint /capture (ticket 19)", () => {
   })
 
   it("rejects a capture with neither url nor body with 400", async () => {
-    await withServer(async ({ base, dataDir, vaultDir }) => {
+    await withServer(async ({ base, vaultDir, enqueued }) => {
       const res = await post(base, "tok-web", { source: "web", type: "note", title: "empty" })
       expect(res.status).toBe(400)
 
       // 拒绝时不落盘、不入队
-      expect(await Bun.file(path.join(dataDir, "jobs.jsonl")).exists()).toBe(false)
+      expect(enqueued).toEqual([])
       expect(await Bun.file(path.join(vaultDir, "0-Inbox")).exists()).toBe(false)
     })
   })
@@ -143,7 +160,7 @@ describe("capture endpoint /capture (ticket 19)", () => {
   })
 
   it("lands a link-only note with fetch_failed when the url cannot be fetched", async () => {
-    await withServer(async ({ base, vaultDir, dataDir }) => {
+    await withServer(async ({ base, vaultDir, enqueued }) => {
       // 端口 1 无服务监听 → 连接立即被拒
       const res = await post(base, "tok-web", {
         source: "web",
@@ -158,8 +175,7 @@ describe("capture endpoint /capture (ticket 19)", () => {
       expect(fm.fetch_failed).toBe(true)
       expect(text).toContain("http://127.0.0.1:1/unreachable")
 
-      const job = JSON.parse((await Bun.file(path.join(dataDir, "jobs.jsonl")).text()).trim())
-      expect(job.note_id).toBe(json.note_id)
+      expect(enqueued.map((job) => job.noteId)).toContain(json.note_id)
     })
   })
 
