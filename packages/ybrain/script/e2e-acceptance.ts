@@ -99,7 +99,10 @@ async function waitDistilled(noteId: string): Promise<Located | undefined> {
 async function gitSubjects(dir: string, limit = 20): Promise<string[]> {
   const proc = Bun.spawn(["git", "-C", dir, "log", `-n${limit}`, "--format=%s"], { stdout: "pipe", stderr: "ignore" })
   if ((await proc.exited) !== 0) return []
-  return (await new Response(proc.stdout).text()).split("\n").map((line) => line.trim()).filter(Boolean)
+  return (await new Response(proc.stdout).text())
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
 }
 
 async function remoteBranchExists(dir: string): Promise<boolean> {

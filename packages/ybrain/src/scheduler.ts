@@ -1,12 +1,5 @@
 import type { Database } from "bun:sqlite"
-import {
-  claimNext,
-  markDone,
-  markFailed,
-  reconcileInbox,
-  recoverRunning,
-  type JobRow,
-} from "./queue"
+import { claimNext, markDone, markFailed, reconcileInbox, recoverRunning, type JobRow } from "./queue"
 
 // 提炼调度器（票据 24）：轮询 jobs 队列，单并发串行领取执行。
 // 随到随做——捕获入队后最迟一个轮询间隔（默认 5 秒）开始提炼；

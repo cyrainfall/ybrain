@@ -128,10 +128,7 @@ describe("distill scheduler (ticket 24)", () => {
       status: "inbox",
     }
     await mkdir(path.join(vaultDir, "0-Inbox"), { recursive: true })
-    await writeFile(
-      path.join(vaultDir, "0-Inbox", `${frontmatter.id}-slug.md`),
-      serializeNote(frontmatter, "正文"),
-    )
+    await writeFile(path.join(vaultDir, "0-Inbox", `${frontmatter.id}-slug.md`), serializeNote(frontmatter, "正文"))
 
     const runs: string[] = []
     const scheduler = startScheduler({

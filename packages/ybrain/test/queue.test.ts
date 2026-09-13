@@ -93,9 +93,7 @@ describe("jobs queue (ticket 24)", () => {
     expect(dead.status).toBe("dead")
     expect(dead.retries).toBe(MAX_RETRIES + 1)
     // dead 永不再被领取
-    expect(
-      claimNext(db, { now: T0 + BACKOFF_MS[0] + BACKOFF_MS[1] + 100_000_000 }),
-    ).toBeNull()
+    expect(claimNext(db, { now: T0 + BACKOFF_MS[0] + BACKOFF_MS[1] + 100_000_000 })).toBeNull()
     expect(countJobs(db, "dead")).toBe(1)
   })
 

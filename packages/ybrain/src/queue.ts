@@ -40,7 +40,14 @@ export function enqueue(db: Database, job: EnqueueInput, now: Date = new Date())
        select ?, ?, ?, 'queued', 0, null, ?, 0, null
        where not exists (select 1 from jobs where note_id = ? and type = ?)`,
     )
-    .run(crypto.randomUUID(), job.noteId, job.type ?? JOB_TYPE_DISTILL, now.toISOString(), job.noteId, job.type ?? JOB_TYPE_DISTILL)
+    .run(
+      crypto.randomUUID(),
+      job.noteId,
+      job.type ?? JOB_TYPE_DISTILL,
+      now.toISOString(),
+      job.noteId,
+      job.type ?? JOB_TYPE_DISTILL,
+    )
   return result.changes > 0
 }
 
@@ -88,9 +95,7 @@ export function markFailed(
 }
 
 export function markDone(db: Database, id: string): void {
-  db.prepare(
-    `update jobs set status = 'done', error = null, run_after = 0, started_at = null where id = ?`,
-  ).run(id)
+  db.prepare(`update jobs set status = 'done', error = null, run_after = 0, started_at = null where id = ?`).run(id)
 }
 
 function expireTimeouts(db: Database, now: number, timeoutMs: number): void {
@@ -102,10 +107,7 @@ function expireTimeouts(db: Database, now: number, timeoutMs: number): void {
 
 // 领取下一个可执行任务：先把超时的 running 按失败处理，再单条原子领取。
 // queued 立即可取；failed 要等退避时刻 run_after 到达。
-export function claimNext(
-  db: Database,
-  options: { now?: number; timeoutMs?: number } = {},
-): JobRow | null {
+export function claimNext(db: Database, options: { now?: number; timeoutMs?: number } = {}): JobRow | null {
   const now = options.now ?? Date.now()
   return db.transaction(() => {
     expireTimeouts(db, now, options.timeoutMs ?? RUN_TIMEOUT_MS)

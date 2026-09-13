@@ -139,10 +139,7 @@ describeVec("search_knowledge", () => {
     expect(included[0]?.note_id).toBe(archived.id)
 
     const excluded = hitsOf(
-      await tools.search_knowledge.execute(
-        { query: "咖啡冲煮水温", include_archived: false },
-        context(vaultDir),
-      ),
+      await tools.search_knowledge.execute({ query: "咖啡冲煮水温", include_archived: false }, context(vaultDir)),
     )
     expect(excluded.map((hit) => hit.note_id)).not.toContain(archived.id)
   })

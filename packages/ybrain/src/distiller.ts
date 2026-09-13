@@ -90,11 +90,7 @@ export type LocatedNote = { relPath: string; frontmatter: NoteFrontmatter }
 
 // 笔记定位：先查索引（save_note 移动后会重索引），索引滞后或队列连接无 notes 表时
 // 退化为全 vault 按 id 文件名前缀扫描（id 唯一，不会错配）。
-export async function findNote(
-  db: Database,
-  vaultDir: string,
-  noteId: string,
-): Promise<LocatedNote | undefined> {
+export async function findNote(db: Database, vaultDir: string, noteId: string): Promise<LocatedNote | undefined> {
   const indexed = lookupIndexedPath(db, noteId)
   if (indexed) {
     const absPath = path.join(vaultDir, indexed)

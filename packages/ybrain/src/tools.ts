@@ -53,7 +53,11 @@ function searchKnowledge(deps: ToolDeps): ToolDefinition {
     },
     async execute(args) {
       // 契约要求返回数组；无命中即空数组，由代理依据指令回答「资料不足」。
-      return JSON.stringify(await deps.search(args.query, { k: args.k, includeArchived: args.include_archived }), null, 2)
+      return JSON.stringify(
+        await deps.search(args.query, { k: args.k, includeArchived: args.include_archived }),
+        null,
+        2,
+      )
     },
   })
 }
@@ -106,7 +110,11 @@ function listInbox(deps: ToolDeps): ToolDefinition {
       if (notes.length === 0) return "收件箱是空的。"
       // dead 任务随收件箱返回，供界面标红（验收 C5）；队列状态不是笔记属性，只做读取时拼接。
       const dead = deadNoteIds(deps.db)
-      return JSON.stringify(notes.map((note) => ({ ...note, dead: dead.has(note.note_id) })), null, 2)
+      return JSON.stringify(
+        notes.map((note) => ({ ...note, dead: dead.has(note.note_id) })),
+        null,
+        2,
+      )
     },
   })
 }

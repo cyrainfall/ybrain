@@ -25,10 +25,10 @@ export function createVaultGit(options: VaultGitOptions) {
 
   async function git(args: string[], withIdentity = false): Promise<{ code: number; stdout: string; stderr: string }> {
     try {
-      const proc = Bun.spawn(
-        ["git", "-C", options.vaultDir, ...(withIdentity ? identity : []), ...args],
-        { stdout: "pipe", stderr: "pipe" },
-      )
+      const proc = Bun.spawn(["git", "-C", options.vaultDir, ...(withIdentity ? identity : []), ...args], {
+        stdout: "pipe",
+        stderr: "pipe",
+      })
       const [code, stdout, stderr] = await Promise.all([
         proc.exited,
         new Response(proc.stdout).text(),
@@ -60,9 +60,7 @@ export function createVaultGit(options: VaultGitOptions) {
     const current = (await git(["remote", "get-url", "origin"])).stdout
     if (current === options.remote) return { ok: true, detail: `远程 origin 已指向 ${options.remote}` }
     const set = await git(
-      current
-        ? ["remote", "set-url", "origin", options.remote]
-        : ["remote", "add", "origin", options.remote],
+      current ? ["remote", "set-url", "origin", options.remote] : ["remote", "add", "origin", options.remote],
     )
     if (set.code !== 0) return { ok: false, reason: `配置远程 origin 失败：${set.stderr}` }
     return { ok: true, detail: `远程 origin → ${options.remote}` }

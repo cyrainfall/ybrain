@@ -373,6 +373,7 @@ tailscaled 默认安装反欺骗规则：
 
 6. 安全组放行 TCP 443（控制面）与 UDP 41641（WireGuard 数据面）；80 仅在证书回退 http-01 时需要。业务端口（4096/8787）不加规则，只绑 tailnet。
 7. Mac 入网：
+
    ```bash
    brew install --cask tailscale-app
    # 首次打开 App 并在「系统设置 → 隐私与安全性」放行系统扩展，然后：
@@ -384,6 +385,7 @@ tailscaled 默认安装反欺骗规则：
    > 这条命令必须在登录用户自己的终端里执行。macOS 版 CLI 通过 GUI 进程取凭据，在 root 会话或受限沙箱里跑会报 `CLI credentials are not available`。切换控制面地址后加 `--force-reauth` 才会重新注册。
 
 8. Android 入网（入口在账户页里，与官方文档同一路径）：右上角头像 → Settings → 点顶部已登录账号那一行进入 **Accounts** → 右上角 **⋮** → **Use an alternate server**，填 `https://<域名>`（弹出的浏览器登录页可关掉）→ 再次进 **Accounts** → **⋮** → **Use an auth key**，粘贴预认证密钥 → 回主页点 Connect。
+
    > 设备名带空格/中文时 headscale 会改成 `invalid-xxxxxx` 之类的占位名（实测「Xiaomi 14」被规范成 `xiaomi14`），需要时用 `headscale nodes rename -i <id> <name>` 修。
 
 9. 验收互通（`tailscale ping` 先报 DERP 中转、随后升级直连属正常）：

@@ -72,10 +72,7 @@ type PromptHandler = (options: {
   signal?: AbortSignal
 }) => Promise<unknown>
 
-function fakeClient(handlers: {
-  prompt: PromptHandler
-  createTitle?: string
-}): {
+function fakeClient(handlers: { prompt: PromptHandler; createTitle?: string }): {
   client: HeadlessClient
   calls: { created: string[]; aborted: string[]; deleted: string[]; prompts: number }
 } {
@@ -126,7 +123,10 @@ describe("runDistillJob (ticket 24)", () => {
       },
     })
 
-    const result = await runDistillJob({ client: fake.client, db, vaultDir, timeoutMs: 5_000 }, await claimedJob(db, id))
+    const result = await runDistillJob(
+      { client: fake.client, db, vaultDir, timeoutMs: 5_000 },
+      await claimedJob(db, id),
+    )
 
     expect(result.outcome).toBe("done")
     expect(result.notePath).toBe(`3-Resources/${id}-slug.md`)
@@ -146,10 +146,7 @@ describe("runDistillJob (ticket 24)", () => {
     await writeNote(vaultDir, `3-Resources/${id}-slug.md`, { frontmatter, body: "要点" })
     const fake = fakeClient({ prompt: async () => {} })
 
-    const result = await runDistillJob(
-      { client: fake.client, db, vaultDir },
-      await claimedJob(db, id),
-    )
+    const result = await runDistillJob({ client: fake.client, db, vaultDir }, await claimedJob(db, id))
 
     expect(result.outcome).toBe("skipped")
     expect(fake.calls.created).toEqual([])
@@ -176,9 +173,9 @@ describe("runDistillJob (ticket 24)", () => {
       },
     })
 
-    await expect(
-      runDistillJob({ client: fake.client, db, vaultDir }, await claimedJob(db, id)),
-    ).rejects.toThrow("模型 500")
+    await expect(runDistillJob({ client: fake.client, db, vaultDir }, await claimedJob(db, id))).rejects.toThrow(
+      "模型 500",
+    )
     expect(fake.calls.aborted).toEqual(["s-1"])
     expect(fake.calls.deleted).toEqual([])
   })
@@ -189,9 +186,9 @@ describe("runDistillJob (ticket 24)", () => {
     await seedInbox(vaultDir, inboxNote(id, "半途而废"), "原文")
     const fake = fakeClient({ prompt: async () => {} })
 
-    await expect(
-      runDistillJob({ client: fake.client, db, vaultDir }, await claimedJob(db, id)),
-    ).rejects.toThrow("distilled")
+    await expect(runDistillJob({ client: fake.client, db, vaultDir }, await claimedJob(db, id))).rejects.toThrow(
+      "distilled",
+    )
     expect(fake.calls.aborted).toEqual(["s-1"])
     expect(fake.calls.deleted).toEqual([])
   })
@@ -211,9 +208,7 @@ describe("runDistillJob (ticket 24)", () => {
       },
     })
 
-    await expect(
-      runDistillJob({ client: fake.client, db, vaultDir }, await claimedJob(db, id)),
-    ).rejects.toThrow("PARA")
+    await expect(runDistillJob({ client: fake.client, db, vaultDir }, await claimedJob(db, id))).rejects.toThrow("PARA")
     expect(fake.calls.aborted).toEqual(["s-1"])
     expect(fake.calls.deleted).toEqual([])
   })
