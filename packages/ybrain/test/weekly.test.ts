@@ -89,7 +89,8 @@ describe("weekly review facts (ticket 24 / E3)", () => {
     expect(facts.dead).toHaveLength(1)
     expect(facts.dead[0]?.note_id).toBe("202609101000-dead")
     expect(facts.dead[0]?.error).toBe("模型 500")
-    expect(facts.giteePush).toContain("Git 仓库")
+    // 未注入 vault-git 时备份状态降级为「未启用」，不编造推送时间
+    expect(facts.backup).toContain("未启用备份")
   })
 })
 

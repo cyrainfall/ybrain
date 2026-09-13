@@ -201,7 +201,7 @@ ENV SQLITE_VEC_PATH=/opt/ybrain/extensions/vec0.so
 
 要点：
 
-- **git**：票据 25 在容器内向 Gitee 备份 vault 时使用；`safe.directory '*'` 是因为挂载进来的 vault 目录 owner 与容器内用户不同，不配置会被 git 以 "dubious ownership" 拒绝。部署密钥的挂载在票据 25 补
+- **git**：票据 25 在容器内向 Gitee 备份 vault 时使用；`safe.directory '*'` 是因为挂载进来的 vault 目录 owner 与容器内用户不同，不配置会被 git 以 "dubious ownership" 拒绝。部署密钥的挂载见 [第四节](#gitee-备份与-mac-端票据-25)
 - **sqlite-vec 0.1.9**：从 GitHub 官方 release 下载 linux-x86_64 可加载扩展，**用官方 checksums.txt 的 sha256 锁定**，安装到 `/opt/ybrain/extensions/vec0.so`
 - `SQLITE_VEC_PATH` 环境变量是票据 22 数据层加载扩展的约定路径
 
@@ -297,6 +297,7 @@ OPENCODE_SERVER_PASSWORD=       # Web 界面基本认证密码
 DEEPSEEK_API_KEY=               # 聊天模型密钥
 SILICONFLOW_API_KEY=            # 嵌入/重排模型密钥
 ZEN_API_KEY=                    # 备用模型密钥
+YBRAIN_VAULT_REMOTE=            # 票据 25：Gitee 私有仓库 SSH 地址；留空则只本地提交不推送
 ```
 
 ### 部署命令
@@ -315,7 +316,43 @@ sudo docker logs ybrain --tail 20   # 应看到 "ybrain plugin loaded (configure
 ### 访问
 
 - Web 界面：`http://<tailnet-ip>:4096`（密码 = `OPENCODE_SERVER_PASSWORD`）
-- 捕获接口：`http://<tailnet-ip>:8787`（票据 19 实装前为空壳）
+- 捕获接口：`http://<tailnet-ip>:8787`（POST `/capture`，Bearer 渠道令牌）
+
+### Gitee 备份与 Mac 端（票据 25）
+
+vault 是唯一不可重建的数据，靠 Git 三副本（服务器 / Mac / Gitee）兜底。SQLite 索引与 jobs 不备份，恢复时 reindex 重建。
+
+**服务器侧（一次性）**
+
+1. 在 Gitee 建私有仓库 `ybrain-vault`（本人操作）；
+2. 生成部署密钥（服务器上，不设 passphrase）：
+   ```bash
+   sudo ssh-keygen -t ed25519 -f /opt/ybrain/gitee_deploy_key -N '' -C 'ybrain-deploy'
+   sudo chmod 600 /opt/ybrain/gitee_deploy_key
+   sudo cat /opt/ybrain/gitee_deploy_key.pub
+   ```
+3. 把公钥内容配到 Gitee 仓库的「部署公钥」，勾选**允许写入**（仅该仓库权限）；
+4. `.env` 填 `YBRAIN_VAULT_REMOTE=git@gitee.com:<账号>/ybrain-vault.git`（compose 已把密钥只读挂进容器并设好 `GIT_SSH_COMMAND`）。
+
+**运行行为**
+
+- 容器启动时自动 `git init` 并把分支统一到 `main`（已 init 则跳过）；
+- 每次提炼闭环：先 `git pull`（把 Mac 手写改动拉回来，冲突留给本人用 Git 合并）→ 成功后 `git add -A && git commit -m 'distill: <标题>'` → `git push`；
+- 书摘拆出的 card 笔记同批提交（`add -A`）；
+- **提交/推送失败只告警，不阻塞提炼**（job 照常算成功）；失败时提交已留在本地，下次闭环的 push 会把领先的提交一并补上。
+
+**Mac 端（Obsidian Git 插件）**
+
+先在 Mac 上 clone Gitee 的 `ybrain-vault` 仓库，再用 Obsidian 打开该目录，启用社区插件 **Obsidian Git**，设置：
+
+- `Pull updates on startup`：开（打开 vault 先拉一次）；
+- `Auto pull interval (minutes)`：`10`；
+- `Auto backup interval (minutes)`：`10`（到点自动 commit + push 本地改动）；
+- `Disable push`：关（要推到 Gitee）。
+
+冲突：Obsidian Git 与服务器端都可能改同一文件，冲突以 Git 合并解决（服务器侧 pull 冲突同样需要本人人工处理一次）。
+
+> 未配置 `YBRAIN_VAULT_REMOTE` 时，服务器只做本地提交、不推送，提炼流程完全不受影响——适合先本地演练。
 
 ---
 

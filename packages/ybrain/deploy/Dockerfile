@@ -9,7 +9,8 @@ ARG SQLITE_VEC_VERSION=0.1.9
 # sha256 来自官方 release 自带的 checksums.txt
 ARG SQLITE_VEC_SHA256=b959baa1d8dc88861b1edb337b8587178cdcb12d60b4998f9d10b6a82052d5d7
 
-# git：票据 25 容器内向 Gitee 备份 vault；部署密钥的挂载在 compose/票据 25 中补
+# git：票据 25 容器内向 Gitee 备份 vault（部署密钥由 compose 只读挂载 + GIT_SSH_COMMAND 指定）
+# safe.directory '*'：挂载进来的 vault 目录 owner 与容器内用户不同，不配置会被 git 以 "dubious ownership" 拒绝
 # curl：下载 sqlite-vec 可加载扩展
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl ripgrep libstdc++6 git \
@@ -40,7 +41,8 @@ RUN opencode --version
 
 COPY context/plugin /opt/ybrain/plugin
 COPY opencode.json /opt/ybrain/opencode.json
-# 票据 23：代理系统指令（回答规则 + 提炼规则）。opencode 会自动发现项目根的 AGENTS.md。
+# 票据 23：代理系统指令（回答规则）。opencode 会自动发现项目根的 AGENTS.md。
+# 提炼规则不在这里——票据 24 起由插件内的 ybrain-distiller 代理指令全权负责。
 COPY AGENTS.md /opt/ybrain/AGENTS.md
 
 WORKDIR /opt/ybrain

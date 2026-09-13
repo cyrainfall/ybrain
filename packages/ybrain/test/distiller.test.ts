@@ -9,9 +9,12 @@ import { enqueue, claimNext, type JobRow } from "../src/queue"
 import type { HeadlessClient } from "../src/session"
 import { parseNote, type NoteFrontmatter } from "../src/frontmatter"
 import { moveNote, readNote, writeNote } from "../src/vault"
+import { createVaultGit } from "../src/vault-git"
+import { describeGit, runGit } from "./lib/git"
 
 // distiller 执行（票据 24）：真文件系统 + 真队列；进程内会话边界用假 client 代替，
 // 假 client 在 prompt 调用里模拟代理对 vault 的读写（等价于 save_note 落盘）。
+// 票据 25 的 Git 备份在同一批用例里用真 git + 本地裸仓库验证。
 
 const dirs: string[] = []
 const opened: Database[] = []
@@ -232,5 +235,33 @@ describe("runDistillJob (ticket 24)", () => {
       runDistillJob({ client: fake.client, db, vaultDir, timeoutMs: 30 }, await claimedJob(db, id)),
     ).rejects.toThrow()
     expect(fake.calls.aborted).toEqual(["s-1"])
+  })
+})
+
+describeGit("distill git backup (ticket 25)", () => {
+  it("commits and pushes the distillation when a vault git is wired in (C3)", async () => {
+    const { db, vaultDir } = await setup()
+    const remote = await mkdtemp(path.join(tmpdir(), "ybrain-remote-"))
+    dirs.push(remote)
+    runGit(remote, ["init", "--bare", "-q"])
+
+    const git = createVaultGit({ vaultDir, remote })
+    await git.ensureRepo()
+
+    const id = "202609130900-hhhh"
+    const relPath = await seedInbox(vaultDir, inboxNote(id, "外链备份"), "原文")
+    const fake = fakeClient({
+      prompt: async () => {
+        await simulateDistillation(vaultDir, relPath)
+      },
+    })
+
+    const result = await runDistillJob({ client: fake.client, db, vaultDir, git }, await claimedJob(db, id))
+
+    expect(result.outcome).toBe("done")
+    // 提炼闭环提交并推送，message 为 distill: <标题>
+    expect(runGit(vaultDir, ["log", "-1", "--format=%s"]).out).toBe("distill: 外链备份")
+    expect(runGit(remote, ["log", "-1", "--format=%s", "main"]).out).toBe("distill: 外链备份")
+    expect(runGit(vaultDir, ["status", "--porcelain"]).out).toBe("")
   })
 })

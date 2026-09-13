@@ -10,11 +10,13 @@ import { startScheduler } from "./scheduler"
 import { createSearch } from "./search"
 import { createEmbedder, createReranker } from "./siliconflow"
 import { createTools } from "./tools"
+import { createVaultGit } from "./vault-git"
 import { watchVault } from "./watcher"
 import { startWeeklyReview } from "./weekly"
 
 // 外脑插件入口：票据 17 骨架 + 票据 19 捕获接口 + 票据 22 数据层
-// + 票据 23 四个原生知识工具 + 票据 24 提炼队列/distiller 会话/周复盘。
+// + 票据 23 四个原生知识工具 + 票据 24 提炼队列/distiller 会话/周复盘
+// + 票据 25 vault Git 自动提交与 Gitee 备份。
 export const server: Plugin = async (input: PluginInput) => {
   const vaultDir = process.env.YBRAIN_VAULT_DIR
   const dataDir = process.env.YBRAIN_DATA_DIR
@@ -35,6 +37,13 @@ export const server: Plugin = async (input: PluginInput) => {
   // 队列优先复用知识连接；索引能力缺扩展时退化为只开 jobs 表的普通连接（捕获不依赖向量扩展）。
   const queueDb = knowledge?.db ?? (vaultDir && dataDir ? openQueue(path.join(dataDir, "index.db")) : undefined)
   const disposers: Array<() => Promise<void> | void> = []
+
+  // vault 的 Git 备份（票据 25）：提炼闭环自动提交并推送 Gitee；未配远程时只做本地提交。
+  const git = vaultDir ? createVaultGit({ vaultDir, remote: process.env.YBRAIN_VAULT_REMOTE }) : undefined
+  if (git) {
+    const status = await git.ensureRepo()
+    console.log(status.ok ? `ybrain vault git: ${status.detail}` : `ybrain vault git 初始化失败：${status.reason}`)
+  }
 
   if (knowledge && vaultDir) {
     // 启动自跑：hash 命中即跳过，未变的笔记不会重复嵌入
@@ -63,7 +72,7 @@ export const server: Plugin = async (input: PluginInput) => {
       db: queueDb,
       vaultDir,
       run: async (job) => {
-        await runDistillJob({ client: input.client, db: queueDb, vaultDir, agent: DISTILLER_AGENT }, job)
+        await runDistillJob({ client: input.client, db: queueDb, vaultDir, agent: DISTILLER_AGENT, git }, job)
       },
     })
     disposers.push(() => scheduler.stop())
@@ -74,6 +83,7 @@ export const server: Plugin = async (input: PluginInput) => {
       vaultDir,
       reindexNote: knowledge.reindexNote,
       agent: REVIEWER_AGENT,
+      git,
       hour: process.env.YBRAIN_WEEKLY_REVIEW_HOUR ? Number(process.env.YBRAIN_WEEKLY_REVIEW_HOUR) : undefined,
     })
     disposers.push(() => weekly.stop())

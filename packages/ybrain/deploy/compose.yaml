@@ -23,9 +23,13 @@ services:
     volumes:
       - /opt/ybrain/vault:/opt/ybrain/vault
       - /opt/ybrain/data:/opt/ybrain/data
+      # 票据 25：Gitee 部署密钥（仅该仓库写权限），宿主上 chmod 600，只读挂进容器
+      - /opt/ybrain/gitee_deploy_key:/root/.ssh/gitee_deploy_key:ro
     env_file: .env
     environment:
       # Web 界面基本认证（隧道加密之外的纵深防御）
       - OPENCODE_SERVER_PASSWORD=${OPENCODE_SERVER_PASSWORD}
+      # 票据 25：git 走部署密钥；accept-new 首次自动记录 gitee.com 主机指纹，避免交互阻塞
+      - GIT_SSH_COMMAND=ssh -i /root/.ssh/gitee_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new
     mem_limit: 1.2g
     restart: unless-stopped

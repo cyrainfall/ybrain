@@ -5,6 +5,7 @@ import { parseNote } from "./frontmatter"
 import { listJobs } from "./queue"
 import { lastAssistantText, runHeadlessSession, type HeadlessClient } from "./session"
 import { newNoteId, noteFileName, writeNote } from "./vault"
+import type { VaultGit } from "./vault-git"
 
 // 周复盘会话（票据 24，验收 E3）：每周日晚由代理扫描本周新增、产出周报、建议归档。
 // 客观事实（新增清单/dead 任务/Gitee 推送时间）由系统侧采集后随任务注入，代理只做综合；
@@ -20,6 +21,7 @@ export type WeeklyDeps = {
   agent?: string
   hour?: number
   now?: () => Date
+  git?: VaultGit
 }
 
 export type WeeklyFacts = {
@@ -27,13 +29,14 @@ export type WeeklyFacts = {
   since: string
   added: Array<{ title: string; path: string; folder: string; type: string }>
   dead: Array<{ note_id: string; title: string; error: string | null }>
-  giteePush: string
+  backup: string
 }
 
 export async function gatherFacts(
   db: Database,
   vaultDir: string,
   now: Date = new Date(),
+  git?: VaultGit,
 ): Promise<WeeklyFacts> {
   const since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
   const paths = (await Array.fromAsync(new Bun.Glob("**/*.md").scan({ cwd: vaultDir }))).sort()
@@ -62,8 +65,17 @@ export async function gatherFacts(
     since: since.toISOString(),
     added,
     dead,
-    giteePush: await giteeLastPush(vaultDir),
+    backup: await describePush(git),
   }
+}
+
+// 备份状态由 vault-git 统一提供（票据 25），周复盘只负责把它说成人话。
+async function describePush(git: VaultGit | undefined): Promise<string> {
+  if (!git) return "未启用备份（票据 25 未配置）"
+  const status = await git.backupStatus()
+  if (!status.remoteConfigured) return "未配置 Gitee 远程（票据 25 待完成）"
+  if (!status.lastPush) return "已配置 Gitee 远程，但尚无推送记录"
+  return `Gitee 远程最近提交时间 ${status.lastPush}`
 }
 
 function noteTitle(db: Database, noteId: string): string {
@@ -73,32 +85,6 @@ function noteTitle(db: Database, noteId: string): string {
   } catch {
     return noteId
   }
-}
-
-// 推送时刻本机不直接记录；push 成功会更新远程跟踪分支，取 Gitee 远程各分支最近提交时间作为代理。
-async function giteeLastPush(vaultDir: string): Promise<string> {
-  const remotes = await git(vaultDir, ["remote", "-v"])
-  if (!remotes) return "未配置（vault 还不是 Git 仓库，票据 25 启用备份后生效）"
-  const gitee = remotes
-    .split("\n")
-    .find((line) => /gitee/i.test(line) && /\(push\)/.test(line))
-    ?.match(/^(\S+)\s/)?.[1]
-  if (!gitee) return "未发现 Gitee 远程（票据 25 配置后生效）"
-  const dates = await git(vaultDir, [
-    "for-each-ref",
-    "--sort=-committerdate",
-    "--format=%(committerdate:iso-strict)",
-    `refs/remotes/${gitee}/`,
-  ])
-  const latest = dates?.split("\n").map((line) => line.trim()).find(Boolean)
-  return latest ? `Gitee 远程最近提交时间 ${latest}（分支 ${gitee}）` : `远程 ${gitee} 尚无推送记录`
-}
-
-async function git(vaultDir: string, args: string[]): Promise<string | undefined> {
-  const proc = Bun.spawn(["git", "-C", vaultDir, ...args], { stdout: "pipe", stderr: "ignore" })
-  const exitCode = await proc.exited
-  if (exitCode !== 0) return undefined
-  return (await new Response(proc.stdout).text()).trim()
 }
 
 export function weeklyTask(facts: WeeklyFacts): string {
@@ -120,7 +106,7 @@ export function weeklyTask(facts: WeeklyFacts): string {
     dead,
     "",
     "【备份】",
-    facts.giteePush,
+    facts.backup,
     "",
     "归档建议请用 get_note / search_knowledge 核实后再下结论。产出周报后结束。",
   ].join("\n")
@@ -130,7 +116,7 @@ export async function runWeeklyReview(
   deps: WeeklyDeps,
   now: Date = new Date(),
 ): Promise<{ sessionID: string; path: string }> {
-  const facts = await gatherFacts(deps.db, deps.vaultDir, now)
+  const facts = await gatherFacts(deps.db, deps.vaultDir, now, deps.git)
   const sessionID = await runHeadlessSession(deps.client, {
     title: `weekly:${facts.weekId}`,
     agent: deps.agent ?? REVIEWER_AGENT,
