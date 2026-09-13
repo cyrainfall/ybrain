@@ -368,6 +368,24 @@ vault 是唯一不可重建的数据，靠 Git 三副本（服务器 / Mac / Git
    ```
 4. 验证：`sudo docker logs ybrain --tail 20`
 
+### 端到端验收（票据 26）
+
+部署完成后按 [mvp-acceptance.md](../../../.scratch/exobrain/prototypes/mvp-acceptance.md) 逐条勾验。其中 B/C/D/E2 可自动化的部分由脚本实测，A/E1/F 等需人工的项在报告里列成待勾清单：
+
+```bash
+YBRAIN_WEB_URL=http://<tailnet-ip>:4096 \
+YBRAIN_CAPTURE_URL=http://<tailnet-ip>:8787 \
+OPENCODE_SERVER_PASSWORD=... CAPTURE_TOKEN_ANDROID=... CAPTURE_TOKEN_WEB=... \
+YBRAIN_VAULT_DIR=/opt/ybrain/vault \
+YBRAIN_E2E_CONFIRM=yes \
+  bun run packages/ybrain/script/e2e-acceptance.ts
+
+# 不带 YBRAIN_E2E_CONFIRM 时只跑只读检查与问答，不往 vault 写测试笔记；
+# 脚本会捕获→等提炼→查 distill 提交→API 提问→触发 reindex，报告写到 ./e2e-acceptance-report.md
+```
+
+`bun` 仅在跑验收脚本时需要（服务器上可用 `docker run --rm -v ...` 或在 Mac 上经 tailnet 执行）。
+
 ---
 
 ## 六、常见问题排查
