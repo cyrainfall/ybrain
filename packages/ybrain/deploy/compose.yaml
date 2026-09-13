@@ -1,5 +1,5 @@
 # 部署模板（票据 09 决策）：两容器 + 宿主机 tailscaled。
-# 服务器目录 /opt/ybrain/：compose.yaml、.env（600 权限）、vault/、data/、headscale/。
+# 服务器目录 /opt/ybrain/：compose.yaml、.env（600 权限）、vault/、data/、opencode/、headscale/、caddy/。
 # headscale 服务的详细配置由票据 18 细化；此处保证编排形态与资源限额正确。
 services:
   headscale:
@@ -42,6 +42,9 @@ services:
     volumes:
       - /opt/ybrain/vault:/opt/ybrain/vault
       - /opt/ybrain/data:/opt/ybrain/data
+      # opencode 自身的会话库与会话历史（默认在容器层 /root/.local/share/opencode），
+      # 不挂卷则每次更新镜像重建容器都会清空聊天记录与项目列表
+      - /opt/ybrain/opencode:/root/.local/share/opencode
       # 票据 25：Gitee 部署密钥（仅该仓库写权限），宿主上 chmod 600，只读挂进容器
       - /opt/ybrain/gitee_deploy_key:/root/.ssh/gitee_deploy_key:ro
     env_file: .env

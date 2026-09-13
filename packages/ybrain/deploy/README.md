@@ -128,6 +128,8 @@ bun -e '
 | `ACR_USERNAME` | ACR 用户名（阿里云账号名） | —                                               |
 | `ACR_PASSWORD` | ACR 固定密码               | —                                               |
 
+> 本部署把 ACR 仓库设为**公开**，服务器 `docker compose pull` 免登录；若保持私有，需先在服务器执行 `docker login <ACR_REGISTRY>`（用户名 = 阿里云账号名，密码 = ACR 固定密码），凭证落在 `/root/.docker/config.json`。
+
 #### 6. 构建并推送镜像
 
 ```bash
@@ -262,6 +264,7 @@ ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
 ├── .env                 # 密钥，权限 600，不入 Git
 ├── vault/               # 笔记库（真相源，Git 备份到 Gitee）
 ├── data/                # SQLite 索引/jobs（可重建，不备份）
+├── opencode/            # opencode 自身的会话库与项目记录（**必须保留**，否则重建容器即清空聊天记录）
 ├── caddy/               # Caddyfile + data/（证书，务必保留）
 └── headscale/           # headscale 配置与 db（可重建，不备份）
 ```
@@ -290,7 +293,7 @@ ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
 - 端口映射：
   - `${YBRAIN_TAILSCALE_IP}:4096:4096` — Web 界面，**只绑 Tailscale 网卡**
   - `${YBRAIN_TAILSCALE_IP}:8787:8787` — 捕获接口，**只绑 Tailscale 网卡**
-- 数据卷：`vault/` 和 `data/`
+- 数据卷：`vault/`、`data/`、`opencode/`（后者存 opencode 会话库 `opencode-dev.db`，默认在容器层，不挂卷则每次重建容器都会清空聊天记录与项目列表）
 - 环境变量：从 `.env` 加载，额外注入 `OPENCODE_SERVER_PASSWORD`
 - 内存限额：1.2GB
 
@@ -299,28 +302,52 @@ ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
 ### .env 配置项
 
 ```bash
-YBRAIN_IMAGE=                   # ACR 镜像地址，如 crpi-xxx.cn-hangzhou.personal.cr.aliyuncs.com/ybrain/ybrain:dev
-YBRAIN_TAILSCALE_IP=            # 服务器 Tailscale 网卡 IP（ip -4 addr show tailscale0）
-OPENCODE_SERVER_PASSWORD=       # Web 界面基本认证密码
+YBRAIN_IMAGE=                   # ACR 镜像地址，如 crpi-<id>.cn-hangzhou.personal.cr.aliyuncs.com/ybrain/ybrain:dev
+YBRAIN_TAILSCALE_IP=            # 服务器 Tailscale 网卡 IP（ip -4 addr show tailscale0），业务端口只绑它
+OPENCODE_SERVER_PASSWORD=       # Web 界面基本认证密码（用户名固定为 opencode）
 DEEPSEEK_API_KEY=               # 聊天模型密钥
 SILICONFLOW_API_KEY=            # 嵌入/重排模型密钥
-ZEN_API_KEY=                    # 备用模型密钥
+ZEN_API_KEY=                    # 备用模型密钥（可留空）
+YBRAIN_VAULT_DIR=/opt/ybrain/vault
+YBRAIN_DATA_DIR=/opt/ybrain/data
+CAPTURE_TOKEN_WEB=              # 票据 19：三渠道独立令牌，至少配一个捕获服务才启动
+CAPTURE_TOKEN_ANDROID=
+CAPTURE_TOKEN_WEREAD=
+YBRAIN_DISTILL_MODEL=           # 票据 24：提炼模型，留空用默认
+YBRAIN_WEEKLY_REVIEW_HOUR=      # 票据 24：周复盘小时，留空默认 20 点
 YBRAIN_VAULT_REMOTE=            # 票据 25：Gitee 私有仓库 SSH 地址；留空则只本地提交不推送
 ```
 
 ### 部署命令
 
 ```bash
-sudo mkdir -p /opt/ybrain/{caddy/data,caddy/config} && cd /opt/ybrain
+sudo mkdir -p /opt/ybrain/{caddy/data,caddy/config,opencode} && cd /opt/ybrain
 # 从仓库拷贝 compose.yaml、Caddyfile 和 .env.example
 sudo cp <repo>/packages/ybrain/deploy/{compose.yaml,.env.example} .
 sudo cp <repo>/packages/ybrain/deploy/caddy/Caddyfile caddy/Caddyfile
 sudo cp .env.example .env && sudo chmod 600 .env
 # 编辑 .env 填入上述配置项
+# Gitee 部署密钥（票据 25）到位前先占位成 600 的空文件：compose 挂载不存在的路径时 Docker 会建成目录
+sudo touch gitee_deploy_key && sudo chmod 600 gitee_deploy_key
 sudo docker compose pull
 sudo docker compose up -d
-sudo docker logs ybrain --tail 20   # 应看到 "ybrain plugin loaded (configured=true)"
+sudo docker logs ybrain-ybrain-1 --tail 20
 ```
+
+### 验收（票据 17）
+
+```bash
+sudo docker logs ybrain-ybrain-1 2>&1 | grep ybrain
+# ybrain plugin loaded (configured=true)   ← 密钥已读到，且只打印布尔值
+# ybrain vault git: 本地仓库已就绪（未配置远程，仅本地提交）
+# ybrain reindex: {"indexed":0,"skipped":0}
+
+# 从 tailnet 内的机器（如 Mac）验证界面与接口（MagicDNS 关闭，用 tailnet IP）
+curl -u opencode:<OPENCODE_SERVER_PASSWORD> -o /dev/null -w '%{http_code}\n' http://100.64.0.1:4096/  # 200；不带认证为 401
+curl -u opencode:<OPENCODE_SERVER_PASSWORD> http://100.64.0.1:4096/session                           # []
+```
+
+> 注：插件加载那几行日志由 opencode 缓冲输出，容器起来后可能延迟十几秒才出现在 `docker logs` 里；期间 `4096` 已可访问属正常。
 
 ### 访问
 
