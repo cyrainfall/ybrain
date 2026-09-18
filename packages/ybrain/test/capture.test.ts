@@ -221,10 +221,14 @@ describe("capture endpoint /capture (ticket 19)", () => {
       expect(fm.tags).toEqual(["架构", "tailscale"])
 
       // 非数组（扩展旧版本或手工 curl）按没标签处理，不落盘垃圾值
-      const plain = await post(base, "tok-web", { source: "web", type: "note", title: "Plain", body: "x", tags: "架构" })
-      const plainFm = parseFrontmatter(
-        await Bun.file(path.join(vaultDir, String((await plain.json()).path))).text(),
-      )
+      const plain = await post(base, "tok-web", {
+        source: "web",
+        type: "note",
+        title: "Plain",
+        body: "x",
+        tags: "架构",
+      })
+      const plainFm = parseFrontmatter(await Bun.file(path.join(vaultDir, String((await plain.json()).path))).text())
       expect(plainFm.tags).toBeUndefined()
     })
   })
