@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "ybrain 剪藏",
+  "version": "0.1.0",
+  "description": "把当前网页正文剪藏进 ybrain 收件箱（自托管外脑）",
+  "minimum_chrome_version": "102",
+  "permissions": ["activeTab", "scripting", "storage", "alarms"],
+  "host_permissions": ["http://*/*"],
+  "action": {
+    "default_title": "剪藏到 ybrain",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  }
+}

@@ -51,6 +51,8 @@ async function handleRequest(config: CaptureConfig, req: Request): Promise<Respo
   const explicitTitle = hasText(body.title) ? body.title : undefined
   const title = explicitTitle ?? deriveTitle(inline) ?? (url ? authorityOf(url) : undefined) ?? "untitled"
   const relPath = `0-Inbox/${noteFileName(id, title)}`
+  // 客户端可直接带标签（浏览器扩展弹窗里补的那几个），缺省交给提炼员去标
+  const tags = Array.isArray(body.tags) ? body.tags.filter(hasText) : []
   const frontmatter: NoteFrontmatter = {
     id,
     title,
@@ -58,6 +60,7 @@ async function handleRequest(config: CaptureConfig, req: Request): Promise<Respo
     source: String(body.source ?? channel),
     url,
     author: hasText(body.author) ? body.author : undefined,
+    tags: tags.length > 0 ? tags : undefined,
     created: capturedAt.toISOString(),
     status: "inbox",
   }

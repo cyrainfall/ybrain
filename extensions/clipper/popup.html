@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>剪藏到 ybrain</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body>
+    <header>
+      <h1>剪藏到 ybrain</h1>
+      <span id="queue" class="muted"></span>
+    </header>
+
+    <section id="unconfigured" hidden>
+      <p class="muted">还没配置捕获地址与渠道令牌。</p>
+      <button id="open-options" class="primary">打开配置页</button>
+    </section>
+
+    <section id="form" hidden>
+      <label for="title">标题<input id="title" type="text" /></label>
+      <label for="author">作者<input id="author" type="text" placeholder="可留空" /></label>
+      <label for="tags">标签<input id="tags" type="text" placeholder="逗号分隔，如：架构, tailscale" /></label>
+      <label for="preview">正文预览 <span id="count" class="muted"></span></label>
+      <textarea id="preview" readonly></textarea>
+      <div class="actions">
+        <button id="send" class="primary">确认发送</button>
+      </div>
+      <p id="status" class="status" hidden></p>
+    </section>
+
+    <p id="error" class="status error" hidden></p>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

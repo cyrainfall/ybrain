@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>ybrain 剪藏配置</title>
+    <link rel="stylesheet" href="ui.css" />
+  </head>
+  <body class="wide">
+    <header>
+      <h1>ybrain 剪藏配置</h1>
+    </header>
+
+    <form id="settings">
+      <label for="endpoint">
+        捕获地址
+        <input id="endpoint" type="text" placeholder="http://100.64.0.1:8787" />
+      </label>
+      <label for="token">web 渠道令牌<input id="token" type="password" placeholder="CAPTURE_TOKEN_WEB" /></label>
+      <div class="actions">
+        <button class="primary">保存</button>
+      </div>
+      <p id="status" class="status ok" hidden></p>
+    </form>
+
+    <p class="muted">
+      地址是服务器 Tailscale 网卡 IP（100.x.x.x）上的 8787 端口，只在本机连上 tailnet 时可达； 令牌是服务器
+      <code>.env</code> 里的 <code>CAPTURE_TOKEN_WEB</code>，两者都只存在本机浏览器里。
+    </p>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

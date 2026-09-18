@@ -1,0 +1,129 @@
+/* 弹窗与配置页共用样式（票据 20） */
+
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #1f2328;
+  --muted: #6b7280;
+  --border: #d8dee4;
+  --accent: #3b5bdb;
+  --accent-fg: #ffffff;
+  --ok: #1a7f37;
+  --error: #c92a2a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1c1f24;
+    --fg: #e6e8eb;
+    --muted: #9aa4b2;
+    --border: #353b45;
+    --accent: #5c7cfa;
+    --ok: #51cf66;
+    --error: #ff8787;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 12px;
+  width: 360px;
+  background: var(--bg);
+  color: var(--fg);
+  font:
+    13px/1.5 -apple-system,
+    "PingFang SC",
+    "Microsoft YaHei",
+    system-ui,
+    sans-serif;
+}
+
+body.wide {
+  width: auto;
+  max-width: 480px;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+}
+
+input,
+textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+}
+
+textarea {
+  height: 140px;
+  resize: vertical;
+  color: var(--muted);
+}
+
+button {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+button.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.status {
+  margin: 10px 0 0;
+  word-break: break-all;
+}
+
+.status.ok {
+  color: var(--ok);
+}
+
+.status.error {
+  color: var(--error);
+}

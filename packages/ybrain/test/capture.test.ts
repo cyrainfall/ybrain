@@ -206,6 +206,29 @@ describe("capture endpoint /capture (ticket 19)", () => {
     })
   })
 
+  it("stores client-supplied tags and drops junk ones", async () => {
+    await withServer(async ({ base, vaultDir }) => {
+      const res = await post(base, "tok-web", {
+        source: "web",
+        type: "clip",
+        title: "Tagged",
+        body: "tagged body",
+        tags: ["架构", "  ", "tailscale"],
+      })
+      expect(res.status).toBe(200)
+      const json = await res.json()
+      const fm = parseFrontmatter(await Bun.file(path.join(vaultDir, String(json.path))).text())
+      expect(fm.tags).toEqual(["架构", "tailscale"])
+
+      // 非数组（扩展旧版本或手工 curl）按没标签处理，不落盘垃圾值
+      const plain = await post(base, "tok-web", { source: "web", type: "note", title: "Plain", body: "x", tags: "架构" })
+      const plainFm = parseFrontmatter(
+        await Bun.file(path.join(vaultDir, String((await plain.json()).path))).text(),
+      )
+      expect(plainFm.tags).toBeUndefined()
+    })
+  })
+
   it("honours a client-supplied created time for id, filename and frontmatter", async () => {
     await withServer(async ({ base, vaultDir }) => {
       // 离线排队后补发的场景：捕获时刻由客户端决定，而非补发时刻
