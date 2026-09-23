@@ -45,7 +45,8 @@ services:
       # opencode 自身的会话库与会话历史（默认在容器层 /root/.local/share/opencode），
       # 不挂卷则每次更新镜像重建容器都会清空聊天记录与项目列表
       - /opt/ybrain/opencode:/root/.local/share/opencode
-      # 票据 25：Gitee 部署密钥（仅该仓库写权限），宿主上 chmod 600，只读挂进容器
+      # 票据 25：Gitee SSH 密钥，宿主上 chmod 600，只读挂进容器。
+      # Gitee 仓库级部署公钥官方仅给只读权限，服务器要推送必须登记为账户级公钥（名称 ybrain-server，可单独吊销）
       - /opt/ybrain/gitee_deploy_key:/root/.ssh/gitee_deploy_key:ro
     env_file: .env
     environment:

@@ -439,7 +439,8 @@ vault 是唯一不可重建的数据，靠 Git 三副本（服务器 / Mac / Git
    sudo chmod 600 /opt/ybrain/gitee_deploy_key
    sudo cat /opt/ybrain/gitee_deploy_key.pub
    ```
-3. 把公钥内容配到 Gitee 仓库的「部署公钥」，勾选**允许写入**（仅该仓库权限）；
+3. 把公钥内容加到 Gitee **账户级** SSH 公钥页 `https://gitee.com/profile/sshkeys`，标题用 `ybrain-server`（添加时 Gitee 要求验证账号密码）。
+   Gitee 的仓库级「部署公钥」官方只授予只读权限，无法满足服务器推送；账户级公钥的代价是该密钥对账户名下所有仓库有效，因此私钥只放服务器、不用时在该页按名称单独吊销；
 4. `.env` 填 `YBRAIN_VAULT_REMOTE=git@gitee.com:<账号>/ybrain-vault.git`（compose 已把密钥只读挂进容器并设好 `GIT_SSH_COMMAND`）。
 
 **运行行为**

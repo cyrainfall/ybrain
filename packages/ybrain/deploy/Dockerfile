@@ -9,11 +9,12 @@ ARG SQLITE_VEC_VERSION=0.1.9
 # sha256 来自官方 release 自带的 checksums.txt
 ARG SQLITE_VEC_SHA256=b959baa1d8dc88861b1edb337b8587178cdcb12d60b4998f9d10b6a82052d5d7
 
-# git：票据 25 容器内向 Gitee 备份 vault（部署密钥由 compose 只读挂载 + GIT_SSH_COMMAND 指定）
+# git + openssh-client：票据 25 容器内向 Gitee 备份 vault（git 走 SSH 协议必须有 ssh 二进制；
+# 密钥由 compose 只读挂载 + GIT_SSH_COMMAND 指定）
 # safe.directory '*'：挂载进来的 vault 目录 owner 与容器内用户不同，不配置会被 git 以 "dubious ownership" 拒绝
 # curl：下载 sqlite-vec 可加载扩展
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl ripgrep libstdc++6 git \
+  && apt-get install -y --no-install-recommends ca-certificates curl ripgrep libstdc++6 git openssh-client \
   && rm -rf /var/lib/apt/lists/* \
   && git config --system --add safe.directory '*' \
   && curl -fsSL "https://github.com/asg017/sqlite-vec/releases/download/v${SQLITE_VEC_VERSION}/sqlite-vec-${SQLITE_VEC_VERSION}-loadable-linux-x86_64.tar.gz" -o /tmp/vec.tar.gz \

@@ -180,7 +180,7 @@ finish() {
 }
 
 # ──────────────────────────────────────────────────────────────────────────
-# STAGES：ybrain vault 备份链路（Gitee 部署密钥 + Mac 端 Obsidian Git）
+# STAGES：ybrain vault 备份链路（Gitee 账户级 SSH 密钥 + Mac 端 Obsidian Git）
 #
 # 运行位置：你的 Mac；服务器步骤经 ssh 别名 ybrain 执行（deploy/README 第一节）。
 # 依据：票据 25、.scratch/exobrain/prototypes/backup-plan.md、deploy/README 第四节。
@@ -260,12 +260,13 @@ note "公钥不是秘密；私钥留在服务器 /opt/ybrain/gitee_deploy_key（
 pause
 
 # ── 4 ─────────────────────────────────────────────────────────────────────
-stage "Gitee：把公钥登记为仓库部署公钥"
-step "打开仓库主页 → 右上/顶部「管理」→ 左侧「部署公钥管理」→「添加部署公钥」"
-open_url "https://gitee.com/${GITEE_ACCOUNT}/ybrain-vault"
-step "标题填 ybrain-server；「公钥」粘贴剪贴板里那一行"
-step "表单里若有「启用推送权限 / 允许写入」开关，勾上——服务器要往这个仓库推提交"
-warn "Gitee 官方文档把部署公钥写成只拉取；没有该开关也能继续，阶段 6 会实测推送并在失败时给替代方案。"
+stage "Gitee：把服务器公钥登记为账户 SSH 公钥"
+warn "Gitee 的仓库级「部署公钥」官方只有只读权限，服务器要推送，必须走账户级公钥。"
+step "打开账户 SSH 公钥页（头像 → 设置 → 安全设置 → SSH 公钥）"
+open_url "https://gitee.com/profile/sshkeys"
+step "「添加公钥」：标题填 ybrain-server；公钥框粘贴剪贴板里那一整行"
+step "提交时 Gitee 会要求验证账号密码（或验证码），按提示完成"
+note "账户级公钥对名下所有仓库有效，不是单仓库最小权限；私钥只留在服务器，不用时在本页按名称 ybrain-server 吊销。"
 pause "添加完成？"
 
 # ── 5 ─────────────────────────────────────────────────────────────────────
@@ -295,15 +296,15 @@ if [ -n "$REMOTE_SHA" ] && [ "$LOCAL_SHA" = "$REMOTE_SHA" ]; then
   say "✓ 推送成功：本地与 origin/main 都是 ${LOCAL_SHA:0:9}"
 else
   warn "推送未成功（本地 ${LOCAL_SHA:0:9}，远端 ${REMOTE_SHA:-无}）"
-  step "替代方案：给这个仓库的部署公钥没有写权限时，把同一把公钥也加到账户公钥 https://gitee.com/profile/sshkeys"
-  note "代价是权限范围变成你名下所有仓库（离开最小权限设计），请在票据 25 记一笔取舍。"
-  SKIPPED+=("Gitee 推送：部署公钥权限不足，需按上面的替代方案处理")
+  step "检查 https://gitee.com/profile/sshkeys 列表里是否有 ybrain-server、指纹是否与阶段 3 公钥一致"
+  step "也可在服务器手工验证：sudo ssh -i /opt/ybrain/gitee_deploy_key -T git@gitee.com（应返回 Hi <账号>!）"
+  SKIPPED+=("Gitee 推送：检查账户公钥 ybrain-server 是否添加正确后重跑本阶段")
 fi
 pause
 
 # ── 7 ─────────────────────────────────────────────────────────────────────
 stage "Mac：账户公钥与 clone（Mac 要能推自己的手写改动）"
-note "部署公钥只覆盖服务器与那一个仓库；Mac 端的手写改动要推回去，用的是账户级公钥。"
+note "服务器与 Mac 用各自独立的账户级公钥；Mac 公钥标题建议取个能区分机器的名字（如 ybrain-mac）。"
 if [ -f "$HOME/.ssh/id_ed25519.pub" ]; then
   say "已有 $HOME/.ssh/id_ed25519.pub，直接用它"
 else
