@@ -2,7 +2,16 @@ import { afterEach, describe, expect, it } from "bun:test"
 import { mkdtemp, rm } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import path from "node:path"
-import { moveNote, newNoteId, noteFileName, readNote, setDistilled, splitOriginal, writeNote } from "../src/vault"
+import {
+  ensureOriginalSection,
+  moveNote,
+  newNoteId,
+  noteFileName,
+  readNote,
+  setDistilled,
+  splitOriginal,
+  writeNote,
+} from "../src/vault"
 import type { NoteFrontmatter } from "../src/frontmatter"
 
 // vault 读写（票据 22）：frontmatter 经编解码、PARA 移动、原文区保留、文件命名。
@@ -100,5 +109,20 @@ describe("原文区保留", () => {
 
   it("replaces the whole body when there is no 原文 section", () => {
     expect(setDistilled("旧正文", "新正文").trim()).toBe("新正文")
+  })
+})
+
+// 票据 28：入队正文没有原文区标记时，代理只写提炼区会把正文整体覆盖。
+describe("ensureOriginalSection", () => {
+  it("wraps a plain captured body into the 原文 section", () => {
+    const wrapped = ensureOriginalSection("第一段原始正文。\n\n第二段。")
+    expect(splitOriginal(wrapped).distilled.trim()).toBe("")
+    expect(splitOriginal(wrapped).original).toBe("## 原文\n\n第一段原始正文。\n\n第二段。\n")
+    expect(setDistilled(wrapped, "要点卡片")).toBe("要点卡片\n\n---\n\n## 原文\n\n第一段原始正文。\n\n第二段。\n")
+  })
+
+  it("leaves a body that already has a 原文 section untouched", () => {
+    const body = "摘要\n\n---\n\n## 原文\n原始正文"
+    expect(ensureOriginalSection(body)).toBe(body)
   })
 })

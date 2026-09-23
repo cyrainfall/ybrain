@@ -4,7 +4,7 @@ import { DISTILLER_AGENT, distillTask } from "./agent"
 import { parseNote, type NoteFrontmatter } from "./frontmatter"
 import { RUN_TIMEOUT_MS, type JobRow } from "./queue"
 import { abortSession, deleteSession, runHeadlessSession, type HeadlessClient } from "./session"
-import { PARA_FOLDERS } from "./vault"
+import { ensureOriginalSection, PARA_FOLDERS, readNote, writeNote } from "./vault"
 import type { GitStatus, VaultGit } from "./vault-git"
 
 // 单次提炼执行（票据 24）：幂等检查 → 进程内隔离代理会话跑提炼流程 → 校验落盘结果。
@@ -36,6 +36,14 @@ export async function runDistillJob(deps: DistillerDeps, job: JobRow): Promise<D
   const before = await findNote(deps.db, deps.vaultDir, job.note_id)
   if (!before) throw new Error(`笔记文件不存在：${job.note_id}`)
   if (before.frontmatter.status === "distilled") return { outcome: "skipped", notePath: before.relPath }
+
+  // 提炼前把入队时的正文固化进原文区（票据 28）：代理只写提炼区，没有这个标记的正文会被整体覆盖。
+  // 抓取落盘与手工放进收件箱的笔记都没有标记，两条入口都靠这一处收口。
+  const note = await readNote(deps.vaultDir, before.relPath)
+  const preserved = ensureOriginalSection(note.body)
+  if (preserved !== note.body) {
+    await writeNote(deps.vaultDir, before.relPath, { frontmatter: note.frontmatter, body: preserved })
+  }
 
   const sessionID = await runHeadlessSession(deps.client, {
     title: `distill:${job.note_id}`,

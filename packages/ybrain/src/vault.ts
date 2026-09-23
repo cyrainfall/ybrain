@@ -57,21 +57,33 @@ export function deriveTitle(body: string | undefined): string | undefined {
 }
 
 const ORIGINAL_MARKER = "## 原文"
+const ORIGINAL_SEPARATOR = "---"
 
 // 原文区自其前的 `---` 分隔线起算，整体保留（data-model §6 正文结构）。
+// 分隔线可能还没有（票据 28 入队时只有原文、还没提炼区），此时原文区就是 marker 起的整段。
 export function splitOriginal(body: string): { distilled: string; original: string | null } {
   const marker = body.indexOf(ORIGINAL_MARKER)
   if (marker < 0) return { distilled: body, original: null }
-  const separator = body.lastIndexOf("\n---", marker)
+  const separator = body.lastIndexOf(`\n${ORIGINAL_SEPARATOR}`, marker)
   const cut = separator >= 0 ? separator + 1 : marker
   return { distilled: body.slice(0, cut), original: body.slice(cut) }
+}
+
+// 入队正文固化（票据 28）：抓取落盘与手工放进收件箱的笔记都没有原文区标记，
+// 而 save_note 只写提炼区，没有标记的正文会被整体覆盖——提炼前先整段收进原文区。已带则原样返回。
+// 不写 `---` 分隔线：分隔线由 setDistilled 在拼接提炼区时补，body 以 `---` 开头会让 frontmatter 解析错乱。
+export function ensureOriginalSection(body: string): string {
+  if (splitOriginal(body).original) return body
+  return `${ORIGINAL_MARKER}\n\n${body.trim()}\n`
 }
 
 // 代理只改提炼区；原文区由系统保留，永不删除。
 export function setDistilled(body: string, distilled: string): string {
   const original = splitOriginal(body).original
   const head = distilled.trimEnd()
-  return original ? `${head}\n\n${original}` : `${head}\n`
+  if (!original) return `${head}\n`
+  const section = original.replace(/^-{3,}[ \t]*\n+/, "").trimEnd()
+  return `${head}\n\n${ORIGINAL_SEPARATOR}\n\n${section}\n`
 }
 
 function slugify(title: string): string {

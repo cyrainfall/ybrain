@@ -17,6 +17,14 @@ describe("indexableBody", () => {
     expect(result).not.toContain("原始正文不该入索引")
     expect(result).not.toContain("## 原文")
   })
+
+  // 票据 28：入队正文固化进原文区后，尚未提炼（或提炼失败停在收件箱）的笔记提炼区为空，
+  // 退回整篇正文，否则这类笔记在检索里会凭空消失。
+  it("falls back to the whole body when only the 原文 section is filled", () => {
+    const wrapped = "## 原文\n\n还没提炼的原始正文"
+    expect(indexableBody(wrapped)).toBe(wrapped)
+    expect(indexableBody(`---\n\n${wrapped}`)).toBe(`---\n\n${wrapped}`)
+  })
 })
 
 describe("splitChunks", () => {

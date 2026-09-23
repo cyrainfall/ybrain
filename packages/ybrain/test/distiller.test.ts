@@ -8,7 +8,7 @@ import { openQueue } from "../src/db"
 import { enqueue, claimNext, type JobRow } from "../src/queue"
 import type { HeadlessClient } from "../src/session"
 import { parseNote, type NoteFrontmatter } from "../src/frontmatter"
-import { moveNote, readNote, writeNote } from "../src/vault"
+import { moveNote, readNote, setDistilled, writeNote } from "../src/vault"
 import { createVaultGit } from "../src/vault-git"
 import { describeGit, runGit } from "./lib/git"
 
@@ -52,6 +52,7 @@ async function seedInbox(vaultDir: string, frontmatter: NoteFrontmatter, body: s
 }
 
 // 模拟提炼代理的 save_note：移动到 3-Resources 并翻 status=distilled。
+// 正文走真 setDistilled——save_note 只写提炼区、原文区由系统保留（票据 28 的回归点）。
 async function simulateDistillation(vaultDir: string, relPath: string): Promise<void> {
   const note = await readNote(vaultDir, relPath)
   const target = await moveNote(vaultDir, relPath, "3-Resources")
@@ -62,7 +63,7 @@ async function simulateDistillation(vaultDir: string, relPath: string): Promise<
       summary: "一句话摘要",
       tags: ["外脑"],
     },
-    body: "要点卡片\n",
+    body: setDistilled(note.body, "要点卡片"),
   })
 }
 
@@ -137,6 +138,40 @@ describe("runDistillJob (ticket 24)", () => {
     expect(await Bun.file(path.join(vaultDir, relPath)).exists()).toBe(false)
     const written = parseNote(await Bun.file(path.join(vaultDir, result.notePath!)).text())
     expect(written.frontmatter.status).toBe("distilled")
+  })
+
+  it("keeps the captured body as the 原文 section when the agent only writes the distilled part (ticket 28)", async () => {
+    const { db, vaultDir } = await setup()
+    const id = "202609130900-orig"
+    // 入队正文没有原文区标记——抓取落盘与手工放进收件箱都是这个形态
+    const captured = "第一段原始正文。\n\n第二段：带上图片链接与属性表。"
+    const relPath = await seedInbox(vaultDir, inboxNote(id, "原文保留"), captured)
+    const fake = fakeClient({
+      prompt: async () => {
+        await simulateDistillation(vaultDir, relPath)
+      },
+    })
+
+    const result = await runDistillJob({ client: fake.client, db, vaultDir }, await claimedJob(db, id))
+
+    const written = await readNote(vaultDir, result.notePath!)
+    expect(written.body.trimEnd()).toBe(`要点卡片\n\n---\n\n## 原文\n\n${captured}`)
+  })
+
+  it("does not wrap a second 原文 section around a note that already has one", async () => {
+    const { db, vaultDir } = await setup()
+    const id = "202609130900-ever"
+    const relPath = await seedInbox(vaultDir, inboxNote(id, "已有原文区"), "摘要\n\n---\n\n## 原文\n原始正文")
+    const fake = fakeClient({
+      prompt: async () => {
+        await simulateDistillation(vaultDir, relPath)
+      },
+    })
+
+    const result = await runDistillJob({ client: fake.client, db, vaultDir }, await claimedJob(db, id))
+
+    const written = await readNote(vaultDir, result.notePath!)
+    expect(written.body.trimEnd()).toBe("要点卡片\n\n---\n\n## 原文\n原始正文")
   })
 
   it("skips creating a session when the note is already distilled (idempotent retry)", async () => {
