@@ -427,6 +427,11 @@ vault 是唯一不可重建的数据，靠 Git 三副本（服务器 / Mac / Git
 
 **服务器侧（一次性）**
 
+> 这一节的 1–4 步加上 Mac 端配置已脚本化，在 Mac 上跑
+> `bash packages/ybrain/deploy/setup-vault-backup.sh` 即按 9 个阶段逐步引导（生成密钥、
+> 复制公钥到剪贴板、写服务器 `.env`、实测推送、clone、Obsidian Git 设置），可中途 Ctrl-C 重跑。
+> 下面是手工版本，供理解与故障排查。
+
 1. 在 Gitee 建私有仓库 `ybrain-vault`（本人操作）；
 2. 生成部署密钥（服务器上，不设 passphrase）：
    ```bash
