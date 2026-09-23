@@ -5,7 +5,9 @@
 export const DISTILLER_AGENT = "ybrain-distiller"
 export const REVIEWER_AGENT = "ybrain-reviewer"
 
-export const DEFAULT_MODEL = "deepseek/deepseek-v4-flash"
+// 2026-09-23（票据 28 复验）：opencode 的模型目录已把 deepseek-v4-flash 改名为 deepseek-flash，
+// 旧名字会让提炼会话以 ProviderModelNotFoundError 失败。
+export const DEFAULT_MODEL = "deepseek/deepseek-flash"
 
 const KNOWLEDGE_TOOLS = ["search_knowledge", "get_note", "save_note", "list_inbox"] as const
 
