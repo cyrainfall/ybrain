@@ -31,6 +31,12 @@
       "skillPath": "skills/engineering/domain-modeling/SKILL.md",
       "computedHash": "a11713c0ff7870efa3c331b2e273f09116158485246edc89ae5088eefd1b0b48"
     },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "89496d5dd00f4810205f351759594fc2742bf8eea85a2f2b2d1de59f4bd91576"
+    },
     "grill-with-docs": {
       "source": "mattpocock/skills",
       "sourceType": "github",
@@ -96,6 +102,66 @@
       "sourceType": "github",
       "skillPath": "skills/engineering/wayfinder/SKILL.md",
       "computedHash": "fa790eb4255b13d24d7e33ff4891ccd3d621558cc0ab87ae226777538ea16a8f"
+    },
+    "wewrite": {
+      "source": "imraywang/wewrite",
+      "sourceType": "github",
+      "skillPath": "skills/wewrite/SKILL.md",
+      "computedHash": "e1893ef409fca0f3c803a49bb5930484e3f55f006418d890467b82e86c13116f"
+    },
+    "wewrite-learn": {
+      "source": "imraywang/wewrite",
+      "sourceType": "github",
+      "skillPath": "skills/wewrite-learn/SKILL.md",
+      "computedHash": "c599ce1abee856c5bb72cc5655052e6aba83e600dea7839d600219635d5e5539"
+    },
+    "wewrite-publish": {
+      "source": "imraywang/wewrite",
+      "sourceType": "github",
+      "skillPath": "skills/wewrite-publish/SKILL.md",
+      "computedHash": "b53b27faf312e7cad431c1133732432930d7af10643ca5bc70b9c5a89aa5226c"
+    },
+    "wewrite-review": {
+      "source": "imraywang/wewrite",
+      "sourceType": "github",
+      "skillPath": "skills/wewrite-review/SKILL.md",
+      "computedHash": "1d8bb6d969c5cd0632fbcbbc518dca18797cbe16ac1a10713235c1b9db2c14bb"
+    },
+    "wewrite-rewrite": {
+      "source": "imraywang/wewrite",
+      "sourceType": "github",
+      "skillPath": "skills/wewrite-rewrite/SKILL.md",
+      "computedHash": "5280dc820d3ef2c01f5edf15d1e924c95b9cedff2aebb755cf1f64b271efcb1f"
+    },
+    "wewrite-stats": {
+      "source": "imraywang/wewrite",
+      "sourceType": "github",
+      "skillPath": "skills/wewrite-stats/SKILL.md",
+      "computedHash": "7e3d81569c9445e9386384df17a8c65ea3677f6da12ff574390c02e3ed492a70"
+    },
+    "wewrite-style": {
+      "source": "imraywang/wewrite",
+      "sourceType": "github",
+      "skillPath": "skills/wewrite-style/SKILL.md",
+      "computedHash": "06f77a0a0078150503079b491bf493bb0d63553ad9f2d0c5db8777746661ed2c"
+    },
+    "wewrite-topic": {
+      "source": "imraywang/wewrite",
+      "sourceType": "github",
+      "skillPath": "skills/wewrite-topic/SKILL.md",
+      "computedHash": "c74be136b14b5ee08a977e5f13e50809cb58e1cad4fafda33d13a7bafae9cc35"
+    },
+    "wewrite-visual": {
+      "source": "imraywang/wewrite",
+      "sourceType": "github",
+      "skillPath": "skills/wewrite-visual/SKILL.md",
+      "computedHash": "7761d8adf9a1ffb5a3a2b7e41b05302af2a1f680fe279765da67ebe3e9423ea4"
+    },
+    "wewrite-write": {
+      "source": "imraywang/wewrite",
+      "sourceType": "github",
+      "skillPath": "skills/wewrite-write/SKILL.md",
+      "computedHash": "357a69c82c993b509667deda80de809dc3dacc91560b6dfa32b38444fb7cc005"
     },
     "wizard": {
       "source": "mattpocock/skills",

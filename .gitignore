@@ -59,3 +59,10 @@ logs/
 *.swp
 
 .trae
+
+# Impeccable 本地安装产物（引擎 + agents + hooks + 命令）
+.github/skills/
+.github/agents/
+.github/hooks/
+.opencode/skills/impeccable/
+.opencode/commands/
