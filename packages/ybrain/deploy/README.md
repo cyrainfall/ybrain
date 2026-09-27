@@ -543,3 +543,25 @@ CUSTOM_SQLITE_PATH=/opt/homebrew/opt/sqlite/lib/libsqlite3.dylib \
 ```
 
 `CUSTOM_SQLITE_PATH` 只用于 macOS 本地开发；Linux 容器不需要设置。
+
+### 7. 剪藏 / 捕获返回 502（本机代理没绕过 Tailscale 网段）
+
+客户端（浏览器扩展、安卓 HTTP Shortcuts）访问 `http://100.64.0.1:8787/capture` 报 502，但服务器侧容器、端口、插件日志都正常。
+
+原因：Mac 上开着 Clash Verge 这类代理软件时，其规则会把 `100.64.0.0/10`（Tailscale 使用的运营商级 NAT 网段）交给代理节点，节点在公网里够不着虚拟内网，代理网关于是返回 502。开着 TUN 模式时把它改成 `DIRECT` 也不管用：mihomo 为避免自己的出站流量被自己的 TUN 收回，会把出站套接字绑定到自动探测到的物理网卡（`auto-detect-interface`），一旦绑定就不再走内核的路由查找，Tailscale 那条更具体的路由被绕过（实测：`DIRECT` 打公网正常，打 `100.64.0.1` 失败）。正确做法是让这个网段的流量**完全不进代理**。
+
+处置（macOS）：系统设置 → 网络 → 当前服务 → 详细信息 → 代理 → 「绕过以下主机与域名的代理」里要有 `100.64.0.0/10`。命令行查看：
+
+```bash
+networksetup -getproxybypassdomains Wi-Fi
+```
+
+用 Clash Verge 时注意：它的「使用默认绕过」（`use_default_bypass`）会用自己的默认列表覆盖上述设置，而默认列表**不含** `100.64.0.0/10`；因此需在 Clash Verge 设置 → 系统代理里关闭「使用默认绕过」，并把 `100.64.0.0/10` 加进绕过列表，否则重启应用或重开系统代理后 502 会复发。
+
+验证（绕过代理应为服务端应答，而非 502）：
+
+```bash
+curl --noproxy '*' -o /dev/null -w '%{http_code}\n' http://100.64.0.1:8787/capture   # 期望 401
+```
+
+顺带两条客户端行为：扩展的发送队列会保留原始捕获时间，恢复后补发即成功；但失败期间重复点「确认发送」会产生多篇同源笔记（按 URL 自行清理即可）。
