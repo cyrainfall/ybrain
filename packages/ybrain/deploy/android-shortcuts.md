@@ -101,24 +101,31 @@ showToast("已发到外脑")
 
 ```js
 // 重试 2 次（共 3 次尝试）；HTTP Shortcuts 没有内置重试，用脚本补
+// 注意：代码块按"程序"执行而不是函数，顶层 return 会报 "return not in a function"，所以用 if/else + break
 if (getVariable("payload") === "") {
   showToast("没有可发送的内容")
-  return
-}
-const url = getVariable("ybrain_host") + "/capture"
-const headers = { Authorization: "Bearer " + getVariable("ybrain_token"), "Content-Type": "application/json" }
-for (let attempt = 1; attempt <= 2; attempt++) {
-  wait(attempt * 2000)
-  const result = sendHttpRequest(url, { method: "POST", headers: headers, body: getVariable("payload") })
-  if (result.status === "success") {
-    showToast("已发到外脑（第 " + (attempt + 1) + " 次尝试成功）")
-    return
+} else if (getVariable("ybrain_token") === "") {
+  showToast("外脑未配置：请在变量里填 ybrain_token")
+} else {
+  const url = getVariable("ybrain_host") + "/capture"
+  const headers = { Authorization: "Bearer " + getVariable("ybrain_token"), "Content-Type": "application/json" }
+  let recovered = false
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    wait(attempt * 2000)
+    const result = sendHttpRequest(url, { method: "POST", headers: headers, body: getVariable("payload") })
+    if (result.status === "success") {
+      recovered = true
+      showToast("已发到外脑（第 " + (attempt + 1) + " 次尝试成功）")
+      break
+    }
+  }
+  if (!recovered) {
+    showNotification(
+      "外脑：捕获失败",
+      "重试 2 次仍未成功。检查 Tailscale 连接与 ybrain_token；内容仍在原来分享它的应用里。",
+    )
   }
 }
-showNotification(
-  "外脑：捕获失败",
-  "重试 2 次仍未成功。检查 Tailscale 连接与 ybrain_token；内容仍在原来分享它的应用里。",
-)
 ```
 
 ## 四、接分享菜单与桌面小部件
@@ -152,6 +159,7 @@ showNotification(
 - **分享面板里找不到 HTTP Shortcuts**：应用提示"没找到合适的快捷方式"时，检查 `share_text` 是否勾了「允许共享」，以及快捷方式里是否有 `getVariable("share_text")` 或 `{share_text}` 的引用。
 - **401**：`ybrain_token` 与服务器 `.env` 里的 `CAPTURE_TOKEN_ANDROID` 不一致；或改了 `.env` 没执行 `docker compose up -d`。轮换令牌时两边一起改，改完手机端只需更新变量。
 - **400**：请求体为空（`share_text` 没拿到值，例如手动点快捷方式后取消了输入框）。
+- **报 `JavaScript错误… return not in a function`**：脚本代码块按"程序"执行而不是函数，顶层 `return` 非法；用 `if / else if / else` + 循环里 `break` 代替（本目录的脚本已经这么写）。
 - **分享的链接没去抓正文**：只有"整段就是一个链接"才判 `clip`。有的应用会把标题和链接一起塞进分享文本，这种会按文字落 `note`（内容不丢，只是不抓正文）；想抓正文就分享纯链接。
 - **总是失败但服务器日志里什么都没**：手机到服务器不通 —— Tailscale 掉线，或另一个 VPN/代理应用占着 VPN 通道。
 - **看失败原因**：应用主菜单 → **故障排查** → **Event History**（列出每次触发、请求、响应与错误）。临时核对响应时，把「响应处理」的显示类型改成「全屏窗口」并勾「显示元数据信息」。
