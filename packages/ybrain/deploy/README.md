@@ -353,6 +353,7 @@ curl -u opencode:<OPENCODE_SERVER_PASSWORD> http://100.64.0.1:4096/session      
 
 - Web 界面：`http://<tailnet-ip>:4096`（密码 = `OPENCODE_SERVER_PASSWORD`）
 - 捕获接口：`http://<tailnet-ip>:8787`（POST `/capture`，Bearer 渠道令牌）
+- 安卓捕获客户端：系统分享菜单 / 桌面速记小部件的 HTTP Shortcuts 配置见 [android-shortcuts.md](android-shortcuts.md)（票据 21）
 
 ### headscale 组网（票据 18）
 

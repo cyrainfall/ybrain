@@ -1,0 +1,62 @@
+{
+  "version": 92,
+  "compatibilityVersion": 90,
+  "title": "外脑捕获",
+  "categories": [
+    {
+      "id": "a6ec2ffa-c5e5-41e4-8aa9-d94d5fb051d5",
+      "name": "外脑",
+      "layoutType": "linear_list",
+      "shortcuts": [
+        {
+          "id": "b0ee5f7b-2000-4037-8fc6-36bf228e0d7a",
+          "executionType": "app",
+          "name": "发到外脑",
+          "description": "分享文本或链接 → ybrain 收件箱（票据 21）",
+          "method": "POST",
+          "url": "{{d258dd60-58e1-45b7-89ef-628c0674d47d}}/capture",
+          "authentication": "bearer",
+          "authToken": "{{ba16fb72-4ea9-46e0-9214-46afc08056ed}}",
+          "requestBodyType": "custom_text",
+          "contentType": "application/json",
+          "bodyContent": "{{payload}}",
+          "timeout": 20000,
+          "waitForInternet": true,
+          "responseHandling": {
+            "uiType": "toast",
+            "successOutput": "none",
+            "failureOutput": "none"
+          },
+          "codeOnPrepare": "// 把分享进来的文本（或手动输入的速记）组装成 /capture 请求体\n// 纯链接 → type: clip（服务器抓正文，失败落仅链接）；其余 → type: note\nconst text = getVariable(\"share_text\").trim()\nconst isLink = /^https?:\\/\\/\\S+$/.test(text)\nconst payload = {\n  source: \"android\",\n  type: isLink ? \"clip\" : \"note\",\n  created: new Date().toISOString(),\n  url: isLink ? text : undefined,\n  body: isLink ? undefined : text,\n}\nsetVariable(\"payload\", text === \"\" ? \"\" : JSON.stringify(payload))",
+          "codeOnSuccess": "showToast(\"已发到外脑\")",
+          "codeOnFailure": "// 重试 2 次（共 3 次尝试）；HTTP Shortcuts 没有内置重试，用脚本补\nif (getVariable(\"payload\") === \"\") {\n  showToast(\"没有可发送的内容\")\n  return\n}\nconst url = getVariable(\"ybrain_host\") + \"/capture\"\nconst headers = { Authorization: \"Bearer \" + getVariable(\"ybrain_token\"), \"Content-Type\": \"application/json\" }\nfor (let attempt = 1; attempt <= 2; attempt++) {\n  wait(attempt * 2000)\n  const result = sendHttpRequest(url, { method: \"POST\", headers: headers, body: getVariable(\"payload\") })\n  if (result.status === \"success\") {\n    showToast(\"已发到外脑（第 \" + (attempt + 1) + \" 次尝试成功）\")\n    return\n  }\n}\nshowNotification(\n  \"外脑：捕获失败\",\n  \"重试 2 次仍未成功。检查 Tailscale 连接与 ybrain_token；内容仍在原来分享它的应用里。\",\n)"
+        }
+      ]
+    }
+  ],
+  "variables": [
+    {
+      "id": "d258dd60-58e1-45b7-89ef-628c0674d47d",
+      "key": "ybrain_host",
+      "type": "constant",
+      "value": "http://100.64.0.1:8787"
+    },
+    {
+      "id": "ba16fb72-4ea9-46e0-9214-46afc08056ed",
+      "key": "ybrain_token",
+      "type": "constant",
+      "value": "",
+      "isSecret": true,
+      "isExcludeValueFromExport": true
+    },
+    {
+      "id": "0440e52d-0ca2-4307-ac2a-cc8884b7ca55",
+      "key": "share_text",
+      "type": "text",
+      "isShareText": true,
+      "isMultiline": true,
+      "title": "记录到外脑",
+      "message": "从别的应用分享时会自动带入；直接点快捷方式则在这里输入。"
+    }
+  ]
+}
