@@ -71,6 +71,7 @@ chmod 600 ~/.workbench/config.json
 **Config file schema by mode:**
 
 AK mode:
+
 ```json
 {
   "current": "default",
@@ -85,6 +86,7 @@ AK mode:
 ```
 
 RamRoleArn mode (auto-refreshes STS tokens):
+
 ```json
 {
   "current": "default",
@@ -101,6 +103,7 @@ RamRoleArn mode (auto-refreshes STS tokens):
 ```
 
 CredentialsURI mode (HTTP endpoint returns credentials):
+
 ```json
 {
   "current": "default",
@@ -113,13 +116,13 @@ CredentialsURI mode (HTTP endpoint returns credentials):
 }
 ```
 
-| Mode | When to use |
-| --- | --- |
-| **AK** (default) | Development, long-lived credentials |
-| **StsToken** | Temporary security credentials (AccessKey + STS Token) |
-| **RamRoleArn** | Production, cross-account, least-privilege via STS role assumption (auto-refreshes tokens) |
-| **CredentialsCmd** | Zero-trust / Vault integration — external command outputs credential JSON |
-| **CredentialsURI** | Metadata service / sidecar — HTTP endpoint returns credential JSON |
+| Mode               | When to use                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| **AK** (default)   | Development, long-lived credentials                                                        |
+| **StsToken**       | Temporary security credentials (AccessKey + STS Token)                                     |
+| **RamRoleArn**     | Production, cross-account, least-privilege via STS role assumption (auto-refreshes tokens) |
+| **CredentialsCmd** | Zero-trust / Vault integration — external command outputs credential JSON                  |
+| **CredentialsURI** | Metadata service / sidecar — HTTP endpoint returns credential JSON                         |
 
 **Profile management (non-interactive):**
 
@@ -153,11 +156,11 @@ workbench
 
 **Global flags:**
 
-| Flag | Purpose | Default |
-| --- | --- | --- |
-| `--output` / `-o` | Output format: `text|json` | `text` |
-| `--region` / `-r` | Alibaba Cloud region (e.g., `cn-hangzhou`) | auto-inferred from instance ID prefix |
-| `--profile` / `-P` | Use a specific profile (overrides active profile) | current active profile |
+| Flag               | Purpose                                           | Default                               |
+| ------------------ | ------------------------------------------------- | ------------------------------------- | ------ |
+| `--output` / `-o`  | Output format: `text                              | json`                                 | `text` |
+| `--region` / `-r`  | Alibaba Cloud region (e.g., `cn-hangzhou`)        | auto-inferred from instance ID prefix |
+| `--profile` / `-P` | Use a specific profile (overrides active profile) | current active profile                |
 
 ### 4. List instances
 
@@ -176,18 +179,20 @@ workbench list ecs --region cn-hangzhou --output json
 JSON output schema:
 
 ```json
-[{
-  "instance_id": "i-bp1xxxxx",
-  "instance_name": "web-prod-01",
-  "instance_type": "ecs.g7.large",
-  "region_id": "cn-hangzhou",
-  "status": "Running",
-  "private_ip": "172.16.0.10",
-  "public_ip": "",
-  "os_type": "linux",
-  "image_id": "ubuntu_22_04_x64_20G_alibase_20230907.vhd",
-  "tags": {"env": "prod"}
-}]
+[
+  {
+    "instance_id": "i-bp1xxxxx",
+    "instance_name": "web-prod-01",
+    "instance_type": "ecs.g7.large",
+    "region_id": "cn-hangzhou",
+    "status": "Running",
+    "private_ip": "172.16.0.10",
+    "public_ip": "",
+    "os_type": "linux",
+    "image_id": "ubuntu_22_04_x64_20G_alibase_20230907.vhd",
+    "tags": { "env": "prod" }
+  }
+]
 ```
 
 ### 5. Remote command execution
@@ -202,11 +207,11 @@ workbench exec --instance-id i-bp1xxxxx --command "sleep 30" --timeout 10
 workbench exec --instance-id i-bp1xxxxx --command "df -h" --output json
 ```
 
-| Flag | Required | Description | Default |
-| --- | --- | --- | --- |
-| `--instance-id` / `-i` | Yes | ECS instance ID | — |
-| `--command` / `-c` | Yes | Command to execute | — |
-| `--timeout` | No | Timeout in seconds | `30` |
+| Flag                   | Required | Description        | Default |
+| ---------------------- | -------- | ------------------ | ------- |
+| `--instance-id` / `-i` | Yes      | ECS instance ID    | —       |
+| `--command` / `-c`     | Yes      | Command to execute | —       |
+| `--timeout`            | No       | Timeout in seconds | `30`    |
 
 **Important**: Each `exec` invocation runs in an independent shell context. State (cd, export) is NOT preserved between calls. Use `&&` or `;` to chain commands that need shared context in a single invocation.
 
@@ -270,17 +275,17 @@ The CLI auto-infers region from the instance ID 3-character prefix (covers 290+ 
 
 ## Exit Codes
 
-| Code | Constant | Trigger |
-| --- | --- | --- |
-| **0** | `ExitSuccess` | Successful execution |
-| **1** | `ExitGeneral` | Unclassified runtime error (includes instance not found, API errors, etc.) |
-| **2** | `ExitArgument` | Missing, malformed, or invalid flag value |
-| **3** | `ExitSessionNotFound` | Session ID invalid or expired |
-| **4** | `ExitAuth` | Authentication or authorization failed |
-| **5** | `ExitNetwork` | Network timeout, WebSocket exception |
-| **6** | `ExitDaemonUnreach` | Local daemon not running or socket invalid |
-| **7** | `ExitSessionBusy` | Session attached by another TTY |
-| **N** | *(exec only)* | `exec` transparently passes through the remote command's exit code |
+| Code  | Constant              | Trigger                                                                    |
+| ----- | --------------------- | -------------------------------------------------------------------------- |
+| **0** | `ExitSuccess`         | Successful execution                                                       |
+| **1** | `ExitGeneral`         | Unclassified runtime error (includes instance not found, API errors, etc.) |
+| **2** | `ExitArgument`        | Missing, malformed, or invalid flag value                                  |
+| **3** | `ExitSessionNotFound` | Session ID invalid or expired                                              |
+| **4** | `ExitAuth`            | Authentication or authorization failed                                     |
+| **5** | `ExitNetwork`         | Network timeout, WebSocket exception                                       |
+| **6** | `ExitDaemonUnreach`   | Local daemon not running or socket invalid                                 |
+| **7** | `ExitSessionBusy`     | Session attached by another TTY                                            |
+| **N** | _(exec only)_         | `exec` transparently passes through the remote command's exit code         |
 
 Error JSON output (on failure with `--output json`):
 
@@ -301,19 +306,12 @@ Minimum RAM policy required:
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "ecs-workbench:LoginECSInstance",
-        "ecs-workbench:ChatMessages"
-      ],
+      "Action": ["ecs-workbench:LoginECSInstance", "ecs-workbench:ChatMessages"],
       "Resource": "*"
     },
     {
       "Effect": "Allow",
-      "Action": [
-        "ecs:DescribeInstances",
-        "ecs:DescribeCloudAssistantStatus",
-        "ecs:StartTerminalSession"
-      ],
+      "Action": ["ecs:DescribeInstances", "ecs:DescribeCloudAssistantStatus", "ecs:StartTerminalSession"],
       "Resource": "*"
     },
     {
@@ -331,19 +329,20 @@ Minimum RAM policy required:
 ```
 
 Restrict to specific instances: replace `"Resource": "*"` in each statement with the corresponding format:
+
 - ecs-workbench:LoginECSInstance : `acs:ecs:<region>:<account-id>:ecs/<instance-id>`
 - ecs actions: `acs:ecs:<region>:<account-id>:instance/<instance-id>`
 
 ## Troubleshooting
 
-| Error message pattern | Exit Code | First Action |
-| --- | --- | --- |
-| `InvalidAccessKeyId` / authentication errors | 4 | Verify AK/SK in `~/.workbench/config.json`. Re-run `workbench config`. |
-| `profile not found` | 1 | Check profile name with `workbench config list`. |
-| `not found in <region>` / instance not found | 1 | Verify instance ID and region. Use `workbench list --region <region>` to confirm. |
-| Network timeout / WebSocket errors | 5 | Check network connectivity to `*.aliyuncs.com`. Verify security group rules. |
-| Session busy / attach errors | 7 | Another terminal is attached. Close it first, or use `workbench session close <id>`. |
-| `cannot start daemon` / socket errors | 6 | Run `workbench daemon status`. If stopped, any command will auto-restart it. |
-| Permission denied (RAM) | 4 | Attach the RAM policy from `## RAM Permissions` to the user or role. |
-| `insecure permissions` | 2 | Run `chmod 600 ~/.workbench/config.json`. |
-| STS token expired | 4 | If using `RamRoleArn` mode, the CLI auto-refreshes. If using static STS, update the token. |
+| Error message pattern                        | Exit Code | First Action                                                                               |
+| -------------------------------------------- | --------- | ------------------------------------------------------------------------------------------ |
+| `InvalidAccessKeyId` / authentication errors | 4         | Verify AK/SK in `~/.workbench/config.json`. Re-run `workbench config`.                     |
+| `profile not found`                          | 1         | Check profile name with `workbench config list`.                                           |
+| `not found in <region>` / instance not found | 1         | Verify instance ID and region. Use `workbench list --region <region>` to confirm.          |
+| Network timeout / WebSocket errors           | 5         | Check network connectivity to `*.aliyuncs.com`. Verify security group rules.               |
+| Session busy / attach errors                 | 7         | Another terminal is attached. Close it first, or use `workbench session close <id>`.       |
+| `cannot start daemon` / socket errors        | 6         | Run `workbench daemon status`. If stopped, any command will auto-restart it.               |
+| Permission denied (RAM)                      | 4         | Attach the RAM policy from `## RAM Permissions` to the user or role.                       |
+| `insecure permissions`                       | 2         | Run `chmod 600 ~/.workbench/config.json`.                                                  |
+| STS token expired                            | 4         | If using `RamRoleArn` mode, the CLI auto-refreshes. If using static STS, update the token. |

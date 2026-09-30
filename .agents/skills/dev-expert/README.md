@@ -23,6 +23,7 @@
  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
           佛祖保佑       永无BUG
 ```
+
 > 📌github上吹的再好的技能Skill，没有实战经验总么可能写出有用的优秀技能！纸上谈兵的孩子就是扯蛋....
 > 🚀 **第一次用？只看这段**：直接说你的目标（如"帮我给后台加个导出按钮"），路由、组合、验证它全包了；只有"报错 / 不确定能不能做"时才需要查 FAQ。
 
@@ -46,11 +47,11 @@
 
 因为渐进式路由**不是单纯的"分类器"，而是六步闭环工作流（Step 0–6）的入口分发轨道**——它的每一层输出都挂着后续的一道门：
 
-| 路由层 | 它挂接的后续步骤（不抛离的原因） |
+| 路由层                                       | 它挂接的后续步骤（不抛离的原因）                                                                   |
 | -------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `@显式` / 关键词 / 领域路由表 | 命中结果决定加载哪个 `reference` 主模板，模板里的澄清门控、验证证据、SELF-AUDIT 清单才有挂载点 |
-| 领域路由表的「路由边界」列 | 提前识别"不在本技能范围"的请求（用户调研 / 排期 / 容器编排 / 安全深度扫描），只做边界说明不硬覆盖 |
-| 优先级矩阵（40+ 行「X+Y」场景） | 决定**组合协同顺序**（先审查后重构、先基线后对比、CMS 规范优先于代码生成），无此则组合失据 |
+| `@显式` / 关键词 / 领域路由表                | 命中结果决定加载哪个 `reference` 主模板，模板里的澄清门控、验证证据、SELF-AUDIT 清单才有挂载点     |
+| 领域路由表的「路由边界」列                   | 提前识别"不在本技能范围"的请求（用户调研 / 排期 / 容器编排 / 安全深度扫描），只做边界说明不硬覆盖  |
+| 优先级矩阵（40+ 行「X+Y」场景）              | 决定**组合协同顺序**（先审查后重构、先基线后对比、CMS 规范优先于代码生成），无此则组合失据         |
 | 意图三分法（信息查询 / 简单任务 / 复杂任务） | 决定走快速通道还是先方案确认——**安全闸门的触发点就在这里**，抛离会跳过生产配置 / DB 写入的事先确认 |
 
 如果抛离路由改为一步直达，会同时丢掉四道关：Step 1.5 澄清门控（模糊形容词直接动手，做完才发现理解不一致）、Step 2 安全闸门（DB / 生产配置未确认即执行）、Step 4 验证证据 + Step 5 SELF-AUDIT（无证据交付）、长任务 handoff / Wave 的主模板锚点（上下文压缩后无法无损续做）。
@@ -68,27 +69,27 @@
 
 > **本节要点**：19 个子技能一表速览，说需求即自动匹配，不必背名字。
 
-| 子技能 | 功能 | 触发关键词 |
+| 子技能           | 功能                                                                                                                                                                               | 触发关键词                                                                                                                                                   |
 | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 软件项目总控 | 通用软件项目从需求到交付的总控：边界、行为契约、架构、数据/API/集成、测试、安全、发布、回滚、监控、告警、巡检和沉淀 | 软件项目, API服务, 后端服务, 后台模块, CLI工具, 数据脚本, 自动化任务, 插件项目, 完整功能, 项目交付, 部署, 发布, 回滚, 运维, 监控, 告警, 巡检 |
-| 网站项目总控 | 从需求到上线的建站项目总控：站点规划、内容SEO、前端设计、CMS/API/数据、测试安全、性能部署、验收运维 | 做网站, 建站, 企业官网, 营销页, CMS网站, 网站上线, 网站交付 |
-| API设计 | 根据业务需求设计RESTful或GraphQL API接口，长任务采用 Init-Step-Poll 契约 | API设计, RESTful, GraphQL, 接口规范, AJAX防卡死, Init-Step-Poll, 长任务接口, 轮询接口 |
-| Bug诊断 | 分析错误日志和异常堆栈，定位Bug根因并给出修复方案 | Bug诊断, debug, 报错, 异常堆栈 |
-| Karpathy编码规范 | 提供Karpathy核心编码哲学：思考优先、简洁至上 | Karpathy编码规范, Karpathy, 编码哲学 |
-| Spec驱动开发 | 编码前对齐需求规格，使用OpenSpec artifact flow | Spec驱动开发, spec, 需求对齐 |
-| 代码审查 | 审查代码质量，发现Bug、安全漏洞和代码缺陷 | 代码审查, code review, 代码缺陷 |
-| 代码生成 | 根据功能需求生成高质量代码，含错误处理和边界条件 | 代码生成, 生成代码, 实现功能 |
-| 任务拆解与执行 | 将复杂需求拆分为原子任务，按Wave分组执行 | 任务拆解与执行, 任务分解, Wave执行 |
-| 技术选型 | 根据项目需求推荐合适技术栈、框架和工具 | 技术选型, 技术栈, 框架选型 |
-| 文档生成 | 根据代码生成技术文档、README、API文档、部署说明和运维文档 | 文档生成, API文档, README, 部署说明, 回滚说明, 运维文档 |
-| 测试用例生成 | 生成单元测试、集成测试、安全测试、性能测试和长任务测试 | 测试用例生成, 单元测试, 测试用例, 安全测试, 性能测试, 长任务测试 |
-| 重构建议 | 分析代码结构，识别坏味道并提供重构方案 | 重构建议, 重构, 坏味道, 代码异味 |
-| 项目记忆管理 | 捕获上下文和决策，实现跨会话项目记忆沉淀 | 项目记忆管理, 项目记忆, 跨会话 |
-| CMS二次开发 | PHP+MySQL CMS 二次开发全链路：CMS探测/PHP版本/数据库规范/安全红线/插件开发/长任务防卡死 | CMS, 帝国CMS, WordPress, ThinkPHP, PHP8兼容, 二次开发, 插件开发, 批量任务, 导入导出, 生成静态页 |
-| 前端设计 | UI/UX 与前端实现设计：设计思维、信息架构、视觉规范、品牌、Banner、图标、社媒图、响应式、可访问性、安全性、命名规范、目录规范、代码质量、ESLint基线、性能实现、浏览器验证、进度轮询 | 前端设计, UI设计, UX, 交互设计, 响应式, 设计系统, 前端安全, 命名规范, 目录规范, ESLint, 代码质量, 性能实现, 品牌设计, Banner, 图标, 社媒图, 进度条, 轮询状态 |
-| MySQL数据库 | MySQL 数据建模、SQL安全、索引设计、事务边界、慢查询诊断、迁移回滚和数据安全 | MySQL, 数据库设计, SQL, 索引, 事务, 慢查询, EXPLAIN, DDL, 迁移, 表结构, SQL优化 |
-| 性能基准测试 | 量化性能验证：识别触发面、测量耗时/内存/吞吐量、生成瓶颈报告、优化前后A/B对比 | 性能测试, benchmark, 基准测试, 耗时分析, 内存分析, 吞吐量, QPS, 瓶颈分析, 性能对比 |
-| 项目知识图谱 | 为项目自动构建代码结构依赖图谱（节点+依赖边），跨模块改动/重构/审查时查依赖闭包与影响面，agent 开发时借全局视角理解项目、定位更准改动更稳；纯 agent 受众，不生成 mermaid 可视化 | 依赖图, 模块关系, 谁依赖, 影响面, 代码结构图谱, 画依赖图, 依赖分析, 改这个会影响哪些文件 |
+| 软件项目总控     | 通用软件项目从需求到交付的总控：边界、行为契约、架构、数据/API/集成、测试、安全、发布、回滚、监控、告警、巡检和沉淀                                                                | 软件项目, API服务, 后端服务, 后台模块, CLI工具, 数据脚本, 自动化任务, 插件项目, 完整功能, 项目交付, 部署, 发布, 回滚, 运维, 监控, 告警, 巡检                 |
+| 网站项目总控     | 从需求到上线的建站项目总控：站点规划、内容SEO、前端设计、CMS/API/数据、测试安全、性能部署、验收运维                                                                                | 做网站, 建站, 企业官网, 营销页, CMS网站, 网站上线, 网站交付                                                                                                  |
+| API设计          | 根据业务需求设计RESTful或GraphQL API接口，长任务采用 Init-Step-Poll 契约                                                                                                           | API设计, RESTful, GraphQL, 接口规范, AJAX防卡死, Init-Step-Poll, 长任务接口, 轮询接口                                                                        |
+| Bug诊断          | 分析错误日志和异常堆栈，定位Bug根因并给出修复方案                                                                                                                                  | Bug诊断, debug, 报错, 异常堆栈                                                                                                                               |
+| Karpathy编码规范 | 提供Karpathy核心编码哲学：思考优先、简洁至上                                                                                                                                       | Karpathy编码规范, Karpathy, 编码哲学                                                                                                                         |
+| Spec驱动开发     | 编码前对齐需求规格，使用OpenSpec artifact flow                                                                                                                                     | Spec驱动开发, spec, 需求对齐                                                                                                                                 |
+| 代码审查         | 审查代码质量，发现Bug、安全漏洞和代码缺陷                                                                                                                                          | 代码审查, code review, 代码缺陷                                                                                                                              |
+| 代码生成         | 根据功能需求生成高质量代码，含错误处理和边界条件                                                                                                                                   | 代码生成, 生成代码, 实现功能                                                                                                                                 |
+| 任务拆解与执行   | 将复杂需求拆分为原子任务，按Wave分组执行                                                                                                                                           | 任务拆解与执行, 任务分解, Wave执行                                                                                                                           |
+| 技术选型         | 根据项目需求推荐合适技术栈、框架和工具                                                                                                                                             | 技术选型, 技术栈, 框架选型                                                                                                                                   |
+| 文档生成         | 根据代码生成技术文档、README、API文档、部署说明和运维文档                                                                                                                          | 文档生成, API文档, README, 部署说明, 回滚说明, 运维文档                                                                                                      |
+| 测试用例生成     | 生成单元测试、集成测试、安全测试、性能测试和长任务测试                                                                                                                             | 测试用例生成, 单元测试, 测试用例, 安全测试, 性能测试, 长任务测试                                                                                             |
+| 重构建议         | 分析代码结构，识别坏味道并提供重构方案                                                                                                                                             | 重构建议, 重构, 坏味道, 代码异味                                                                                                                             |
+| 项目记忆管理     | 捕获上下文和决策，实现跨会话项目记忆沉淀                                                                                                                                           | 项目记忆管理, 项目记忆, 跨会话                                                                                                                               |
+| CMS二次开发      | PHP+MySQL CMS 二次开发全链路：CMS探测/PHP版本/数据库规范/安全红线/插件开发/长任务防卡死                                                                                            | CMS, 帝国CMS, WordPress, ThinkPHP, PHP8兼容, 二次开发, 插件开发, 批量任务, 导入导出, 生成静态页                                                              |
+| 前端设计         | UI/UX 与前端实现设计：设计思维、信息架构、视觉规范、品牌、Banner、图标、社媒图、响应式、可访问性、安全性、命名规范、目录规范、代码质量、ESLint基线、性能实现、浏览器验证、进度轮询 | 前端设计, UI设计, UX, 交互设计, 响应式, 设计系统, 前端安全, 命名规范, 目录规范, ESLint, 代码质量, 性能实现, 品牌设计, Banner, 图标, 社媒图, 进度条, 轮询状态 |
+| MySQL数据库      | MySQL 数据建模、SQL安全、索引设计、事务边界、慢查询诊断、迁移回滚和数据安全                                                                                                        | MySQL, 数据库设计, SQL, 索引, 事务, 慢查询, EXPLAIN, DDL, 迁移, 表结构, SQL优化                                                                              |
+| 性能基准测试     | 量化性能验证：识别触发面、测量耗时/内存/吞吐量、生成瓶颈报告、优化前后A/B对比                                                                                                      | 性能测试, benchmark, 基准测试, 耗时分析, 内存分析, 吞吐量, QPS, 瓶颈分析, 性能对比                                                                           |
+| 项目知识图谱     | 为项目自动构建代码结构依赖图谱（节点+依赖边），跨模块改动/重构/审查时查依赖闭包与影响面，agent 开发时借全局视角理解项目、定位更准改动更稳；纯 agent 受众，不生成 mermaid 可视化    | 依赖图, 模块关系, 谁依赖, 影响面, 代码结构图谱, 画依赖图, 依赖分析, 改这个会影响哪些文件                                                                     |
 
 > 你**不必背这 19 个技能**——说需求即自动匹配（见「使用方法」）。上表的作用是帮你快速了解「每个技能大概干什么、什么场景会自动触发」，方便你判断交付结果是否符合预期；想用得更好，扫一遍这张表即可，无需记忆触发词。
 
@@ -106,16 +107,16 @@ Laravel、Eloquent、Blade、artisan、Migration、Form Request、Queue、PHPUni
 
 如果是第一次使用，不需要记住全部触发词，按下面入口说需求即可：
 
-| 你想做什么 | 推荐说法 | 会进入 |
+| 你想做什么         | 推荐说法                                          | 会进入                               |
 | ------------------ | ------------------------------------------------- | ------------------------------------ |
-| 写一个功能 | "帮我实现登录接口，要求有参数校验和测试" | 代码生成 + 测试用例生成 |
-| 修一个报错 | "这个报错帮我定位原因并给修复方案" | Bug诊断 |
-| 检查代码有没有问题 | "审查这个文件，重点看安全和性能" | 代码审查 |
-| 做 CMS/PHP 二开 | "这是 WordPress/帝国CMS 项目，帮我加一个后台功能" | CMS二次开发 |
-| 设计接口 | "设计一个订单导出接口，数据量大，需要进度条" | API设计 + Init-Step-Poll |
-| 换电脑继续上次任务 | "继续上次任务，先恢复 handoff" | 项目记忆管理 |
-| 顺带做两件事 | "实现导出接口，顺带生成接口文档" | 代码生成 + 文档生成 |
-| 不知道功能叫啥 | "帮我看看这段代码安不安全" | 代码审查（描述目标即可，不必记名字） |
+| 写一个功能         | "帮我实现登录接口，要求有参数校验和测试"          | 代码生成 + 测试用例生成              |
+| 修一个报错         | "这个报错帮我定位原因并给修复方案"                | Bug诊断                              |
+| 检查代码有没有问题 | "审查这个文件，重点看安全和性能"                  | 代码审查                             |
+| 做 CMS/PHP 二开    | "这是 WordPress/帝国CMS 项目，帮我加一个后台功能" | CMS二次开发                          |
+| 设计接口           | "设计一个订单导出接口，数据量大，需要进度条"      | API设计 + Init-Step-Poll             |
+| 换电脑继续上次任务 | "继续上次任务，先恢复 handoff"                    | 项目记忆管理                         |
+| 顺带做两件事       | "实现导出接口，顺带生成接口文档"                  | 代码生成 + 文档生成                  |
+| 不知道功能叫啥     | "帮我看看这段代码安不安全"                        | 代码审查（描述目标即可，不必记名字） |
 
 ### 需求表达完整示例（初次使用照着抄，不用背技能名）
 
@@ -161,15 +162,15 @@ Laravel、Eloquent、Blade、artisan、Migration、Form Request、Queue、PHPUni
 
 ### 文档阅读顺序
 
-| 场景 | 先看 | 再看 |
-| -------------------------- | --------------------------------------------------- | ------------------------------------- | --- |
-| 只想知道怎么用 | `README.md` 的"3 分钟上手"和"子技能列表" | `FAQ.md` |
-| 不知道该用哪个技能 | `README.md` 子技能列表 | `references/routing.md` 领域路由表 / 优先级矩阵 |
-| 遇到报错、卡住、看不懂提示 | `FAQ.md` | 对应 `references/*.md` 的失败回退机制 |
-| 长任务执行/续做/可靠交付 | `FAQ.md` 第九节 | `references/task-decomposition-and-execution.md` 长任务执行可靠性 |
-| 要改技能执行规则 | `SKILL.md`（薄入口 + 强制加载表） | 对应 `references/*.md` |
-| 要看某个技能细节 | `references/` 下对应文件 | `FAQ.md` 的反模式清单 |
-| 想先知道哪些不能做 / 红线 | `FAQ.md`「能力边界速览」/ 二、执行禁区 / 六、边界外 | `references/execution-safety.md` 安全闸门 / 澄清策略分级 | |
+| 场景                       | 先看                                                | 再看                                                              |
+| -------------------------- | --------------------------------------------------- | ----------------------------------------------------------------- | --- |
+| 只想知道怎么用             | `README.md` 的"3 分钟上手"和"子技能列表"            | `FAQ.md`                                                          |
+| 不知道该用哪个技能         | `README.md` 子技能列表                              | `references/routing.md` 领域路由表 / 优先级矩阵                   |
+| 遇到报错、卡住、看不懂提示 | `FAQ.md`                                            | 对应 `references/*.md` 的失败回退机制                             |
+| 长任务执行/续做/可靠交付   | `FAQ.md` 第九节                                     | `references/task-decomposition-and-execution.md` 长任务执行可靠性 |
+| 要改技能执行规则           | `SKILL.md`（薄入口 + 强制加载表）                   | 对应 `references/*.md`                                            |
+| 要看某个技能细节           | `references/` 下对应文件                            | `FAQ.md` 的反模式清单                                             |
+| 想先知道哪些不能做 / 红线  | `FAQ.md`「能力边界速览」/ 二、执行禁区 / 六、边界外 | `references/execution-safety.md` 安全闸门 / 澄清策略分级          |     |
 
 ### 组合子技能与进阶触发
 
@@ -185,33 +186,33 @@ Laravel、Eloquent、Blade、artisan、Migration、Form Request、Queue、PHPUni
 
 **设计要点：这套钩子强在哪**（每条均可在 `hooks/*.py` 中检索到依据）
 
-| # | 设计要点 | 依据 |
-| - | - | - |
-| 1 | **写前阻断是唯一能把告警送到 Agent 的通道**——PostToolUse 的 stdout 与退出码都不回传 Agent，只有 PreToolUse `exit 2` 会把拒绝理由回传；故「必须在写入前知道」的检查全部前移 | `hooks/precheck_on_write.py:3-7` |
-| 2 | **组合模式压误报**——安全项要求「危险函数 **且** 用户输入源（超全局）」同现才命中，不按裸函数名判定；`replace_in_file` 只审 `new_str` 片段，不牵连存量代码 | `precheck_on_write.py:47-50`、`:19-23` |
-| 3 | **失败一律放行，绝不误拦**——任何异常 / 依赖缺失 / 解释器不可用 → 静默 `exit 0`，宁可不报也不打断你的工作流 | 各脚本 `except → return 0` 早退 |
-| 4 | **依赖探测链，不写死路径**——PHP 按 `PHP_BIN` → 多版本环境变量 → 三平台候选目录 × 版本降序（85→74）解析；Java 走 `javac` 且**只认白名单语法错**（`cannot find symbol` / `package does not exist` 一律忽略，避免缺依赖误报） | `lint_on_write.py:20-39`、`:6-9` |
-| 5 | **防杀软自伤**——危险函数名 / 敏感词一律用字符串拼接构造，源码中不出现完整函数名；并防「钩子被再次写入时自己拦自己」 | `precheck_on_write.py:31-32`、`security_scan.py:9-10`、`secret_scan.py:13-15` |
-| 6 | **一套配置跨 IDE**——matcher 工具名并集（`write_to_file\|replace_in_file\|Write\|Edit`）；五路证据探测在用工具；幂等只追加不删除；对「技能安装目录 / 模板自身」两重拒写 | `scripts/hooks.json:2`、`scripts/init_deploy.py` |
+| #   | 设计要点                                                                                                                                                                                                                   | 依据                                                                          |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 1   | **写前阻断是唯一能把告警送到 Agent 的通道**——PostToolUse 的 stdout 与退出码都不回传 Agent，只有 PreToolUse `exit 2` 会把拒绝理由回传；故「必须在写入前知道」的检查全部前移                                                 | `hooks/precheck_on_write.py:3-7`                                              |
+| 2   | **组合模式压误报**——安全项要求「危险函数 **且** 用户输入源（超全局）」同现才命中，不按裸函数名判定；`replace_in_file` 只审 `new_str` 片段，不牵连存量代码                                                                  | `precheck_on_write.py:47-50`、`:19-23`                                        |
+| 3   | **失败一律放行，绝不误拦**——任何异常 / 依赖缺失 / 解释器不可用 → 静默 `exit 0`，宁可不报也不打断你的工作流                                                                                                                 | 各脚本 `except → return 0` 早退                                               |
+| 4   | **依赖探测链，不写死路径**——PHP 按 `PHP_BIN` → 多版本环境变量 → 三平台候选目录 × 版本降序（85→74）解析；Java 走 `javac` 且**只认白名单语法错**（`cannot find symbol` / `package does not exist` 一律忽略，避免缺依赖误报） | `lint_on_write.py:20-39`、`:6-9`                                              |
+| 5   | **防杀软自伤**——危险函数名 / 敏感词一律用字符串拼接构造，源码中不出现完整函数名；并防「钩子被再次写入时自己拦自己」                                                                                                        | `precheck_on_write.py:31-32`、`security_scan.py:9-10`、`secret_scan.py:13-15` |
+| 6   | **一套配置跨 IDE**——matcher 工具名并集（`write_to_file\|replace_in_file\|Write\|Edit`）；五路证据探测在用工具；幂等只追加不删除；对「技能安装目录 / 模板自身」两重拒写                                                     | `scripts/hooks.json:2`、`scripts/init_deploy.py`                              |
 
 **能力矩阵（按维度而非按文件名）**
 
-| 维度 | 覆盖规模 | 钩子 |
-| - | - | - |
-| 写前阻断 | 4 类内容级检查（PHP 语法 / 调试残留 / 安全组合 / 语言规范），命中 `exit 2` 拒绝写入并回传理由 | `precheck_on_write` |
-| 回滚网 | 改写前自动 `.bak`，**保留最近 10 个历史版本**（`.bak` + `.bak.1`…`.bak.9`），内容一致则跳过、新文件不备份、8 类目录豁免、23 种扩展名生效 | `backup_on_write` |
-| 边界守卫 | 4 个受保护目录（`uploads` / `backup` / `vendor` / `node_modules`）拒写；核心目录改动前要求存在进行中的 `*_plan.md`（默认 7 核心目录 / 15 排除目录 / 9 扩展名，均可 env 覆盖） | `guard_dirs`、`plan_guard` |
-| 语法自检 | 3 语言：PHP `php -l` / Java `javac`（白名单过滤）/ Python `py_compile` | `lint_on_write` |
-| 兼容扫描 | PHP 8.x 3 类（短标签 / 裸数组键 / `each`·`create_function`·`get_magic_quotes_gpc`，跳过全大写常量）；Java **10 个版本特性**按 `pom.xml`·`build.gradle` 目标版本判定，探测不到即静默 | `php8_compat`、`java_compat` |
-| 安全扫描 | PHP 5 规则（反序列化 / 包含接变量 / 动态执行 / 批量导入 / 错误暴露）+ Java 6 规则（原生反序列化 / 命令执行 / SQL 拼接 / XXE / 弱哈希加密 / 堆栈外泄） | `security_scan` |
-| SQL 注入 | **7 风险模式 × 13 种扩展名 × 5 语言**（PHP / Python / JS / Java / Go），含 MySQL 特有高危关键字（`LOAD DATA` / `INTO OUTFILE` / `GRANT`），并有 **4 类安全模式跳过**（`prepare` / `bindParam` / ORM / `executemany`） | `sql_injection_check` |
-| CMS / 框架 | **31 条规则 = 6 类风险 + 18 条 SQL 注入 + 13 条框架特有**，覆盖 **17 个生态**（帝国 / 织梦 / Discuz / WordPress / PHPCMS / Drupal / Joomla / ThinkPHP / CI / Laravel / Yii / Symfony / Typecho / ZBlog / Emlog / PDO / mysqli），13 个转义函数同行跳过 | `cms_risk_check` |
-| 脱敏 | 硬编码明文凭证（12 类凭证名变体）+ 日志 / 文件写入含敏感变量 | `secret_scan` |
-| 调试残留 | 4 语言族（PHP `var_dump`·`print_r`·`die`；JS·TS `console.log`；Java·Kotlin `System.out.print*`·`printStackTrace`；Laravel·Symfony `dd`·`dump`），17 种扩展名，跳过 `tests/` | `debug_residue` |
-| 依赖漏洞 | **7 生态**（npm / yarn / pnpm · pip · composer · Go · Maven / Gradle · Ruby）依赖文件变更即提示对应 `audit` 命令 | `dep_scan` |
-| 学习闭环 | 捕获错误信号（16+ 关键词）→ 错误册 → **≥3 次且 ≥2 任务且 30 天窗口**才建议升规则；全程非阻塞、不自动写文件 | `capture_learning`、`recurrence_promote`、`errors_recall_guard`、`errors_dup_guard` |
-| 图谱兜底 | 写代码后自动附**上游 2 跳**依赖摘要（≤5 文件 / 15s 超时）；**三件套齐全才查、`--no-rebuild` 绝不重建、无上游则静默** | `graph_impact` |
-| 上下文与卫生 | 压缩前落检查点快照；超期日迹归档（只移不删）；技能文档改动后自动跑步骤号一致性校验；其它：`select_star`（裸 `SELECT *`）、`utf8_check`（UTF-8 合法性） | `handoff_snapshot`、`memory_prune`、`rule_ref_guard` |
+| 维度         | 覆盖规模                                                                                                                                                                                                                                               | 钩子                                                                                |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| 写前阻断     | 4 类内容级检查（PHP 语法 / 调试残留 / 安全组合 / 语言规范），命中 `exit 2` 拒绝写入并回传理由                                                                                                                                                          | `precheck_on_write`                                                                 |
+| 回滚网       | 改写前自动 `.bak`，**保留最近 10 个历史版本**（`.bak` + `.bak.1`…`.bak.9`），内容一致则跳过、新文件不备份、8 类目录豁免、23 种扩展名生效                                                                                                               | `backup_on_write`                                                                   |
+| 边界守卫     | 4 个受保护目录（`uploads` / `backup` / `vendor` / `node_modules`）拒写；核心目录改动前要求存在进行中的 `*_plan.md`（默认 7 核心目录 / 15 排除目录 / 9 扩展名，均可 env 覆盖）                                                                          | `guard_dirs`、`plan_guard`                                                          |
+| 语法自检     | 3 语言：PHP `php -l` / Java `javac`（白名单过滤）/ Python `py_compile`                                                                                                                                                                                 | `lint_on_write`                                                                     |
+| 兼容扫描     | PHP 8.x 3 类（短标签 / 裸数组键 / `each`·`create_function`·`get_magic_quotes_gpc`，跳过全大写常量）；Java **10 个版本特性**按 `pom.xml`·`build.gradle` 目标版本判定，探测不到即静默                                                                    | `php8_compat`、`java_compat`                                                        |
+| 安全扫描     | PHP 5 规则（反序列化 / 包含接变量 / 动态执行 / 批量导入 / 错误暴露）+ Java 6 规则（原生反序列化 / 命令执行 / SQL 拼接 / XXE / 弱哈希加密 / 堆栈外泄）                                                                                                  | `security_scan`                                                                     |
+| SQL 注入     | **7 风险模式 × 13 种扩展名 × 5 语言**（PHP / Python / JS / Java / Go），含 MySQL 特有高危关键字（`LOAD DATA` / `INTO OUTFILE` / `GRANT`），并有 **4 类安全模式跳过**（`prepare` / `bindParam` / ORM / `executemany`）                                  | `sql_injection_check`                                                               |
+| CMS / 框架   | **31 条规则 = 6 类风险 + 18 条 SQL 注入 + 13 条框架特有**，覆盖 **17 个生态**（帝国 / 织梦 / Discuz / WordPress / PHPCMS / Drupal / Joomla / ThinkPHP / CI / Laravel / Yii / Symfony / Typecho / ZBlog / Emlog / PDO / mysqli），13 个转义函数同行跳过 | `cms_risk_check`                                                                    |
+| 脱敏         | 硬编码明文凭证（12 类凭证名变体）+ 日志 / 文件写入含敏感变量                                                                                                                                                                                           | `secret_scan`                                                                       |
+| 调试残留     | 4 语言族（PHP `var_dump`·`print_r`·`die`；JS·TS `console.log`；Java·Kotlin `System.out.print*`·`printStackTrace`；Laravel·Symfony `dd`·`dump`），17 种扩展名，跳过 `tests/`                                                                            | `debug_residue`                                                                     |
+| 依赖漏洞     | **7 生态**（npm / yarn / pnpm · pip · composer · Go · Maven / Gradle · Ruby）依赖文件变更即提示对应 `audit` 命令                                                                                                                                       | `dep_scan`                                                                          |
+| 学习闭环     | 捕获错误信号（16+ 关键词）→ 错误册 → **≥3 次且 ≥2 任务且 30 天窗口**才建议升规则；全程非阻塞、不自动写文件                                                                                                                                             | `capture_learning`、`recurrence_promote`、`errors_recall_guard`、`errors_dup_guard` |
+| 图谱兜底     | 写代码后自动附**上游 2 跳**依赖摘要（≤5 文件 / 15s 超时）；**三件套齐全才查、`--no-rebuild` 绝不重建、无上游则静默**                                                                                                                                   | `graph_impact`                                                                      |
+| 上下文与卫生 | 压缩前落检查点快照；超期日迹归档（只移不删）；技能文档改动后自动跑步骤号一致性校验；其它：`select_star`（裸 `SELECT *`）、`utf8_check`（UTF-8 合法性）                                                                                                 | `handoff_snapshot`、`memory_prune`、`rule_ref_guard`                                |
 
 **语言覆盖**（按扩展名分派；未覆盖的语言仍按正文纪律执行）：**语法自检** PHP / Java / Python（`lint_on_write`，Java 走 `javac` 语法级检查并过滤依赖缺失类错误）→ **兼容扫描** PHP 8.x（`php8_compat`）/ Java 版本特性（`java_compat`，按 `pom.xml` / `build.gradle` 目标版本判定）→ **安全扫描** PHP + Java（`security_scan`）→ **依赖漏洞提示** npm / pip / composer / Go / Maven / Gradle（`dep_scan`）→ **语言无关** 脱敏 / UTF-8 / 调试残留（含 `System.out.print*`、`printStackTrace`）/ SELECT \* / SQL 注入 / 核心目录规划拦截。
 
@@ -219,11 +220,11 @@ Laravel、Eloquent、Blade、artisan、Migration、Form Request、Queue、PHPUni
 
 **`scripts/` 目录**里会出现三个带 `hooks` 前缀的 JSON（与唯一消费者 `scripts/init_deploy.py` 同目录），分工如下，别混为一谈：
 
-| 文件 | 类别 | 由谁产生 | 作用 |
+| 文件                       | 类别                                         | 由谁产生                | 作用                                                                                                                                                                                                                                                                                         |
 | -------------------------- | -------------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `hooks.json` | **主模板（源，手写维护）** | 你自己维护 | 22 个跨平台守卫钩子的完整定义；占位符 `{{PYTHON_BIN}}`/`{{HOOKS_DIR}}` 由运行时或初始化部署器替换。**已含** `capture_learning.py` 的 PostToolUse 项，但**不含** `UserPromptSubmit` 段 |
-| `hooks.capture-draft.json` | **捕获 hook 增量草案（源，手写维护，可选）** | 你自己维护 | 同一个 `capture_learning.py` 的 PostToolUse 项 + **额外一条 `UserPromptSubmit`（带 `--mode correction` 直接捕获你的纠错句式，信号最准）**。因 `UserPromptSubmit` 并非所有 IDE 都支持（不支持的 IDE 会因未知事件名导致整份配置加载失败），故**单列 opt-in**，要用就单独并入，不用不影响主配置 |
-| `hooks.installed.json` | **安装产物（自动生成，勿手改）** | `install_hooks.py` 生成 | 把 `hooks.json`（或指定源）里的占位符替换成真实机器路径后的可加载配置；接入运行时后可用（**须先完成环境适配**，非开箱即用，见上方 ⚠️注意） |
+| `hooks.json`               | **主模板（源，手写维护）**                   | 你自己维护              | 22 个跨平台守卫钩子的完整定义；占位符 `{{PYTHON_BIN}}`/`{{HOOKS_DIR}}` 由运行时或初始化部署器替换。**已含** `capture_learning.py` 的 PostToolUse 项，但**不含** `UserPromptSubmit` 段                                                                                                        |
+| `hooks.capture-draft.json` | **捕获 hook 增量草案（源，手写维护，可选）** | 你自己维护              | 同一个 `capture_learning.py` 的 PostToolUse 项 + **额外一条 `UserPromptSubmit`（带 `--mode correction` 直接捕获你的纠错句式，信号最准）**。因 `UserPromptSubmit` 并非所有 IDE 都支持（不支持的 IDE 会因未知事件名导致整份配置加载失败），故**单列 opt-in**，要用就单独并入，不用不影响主配置 |
+| `hooks.installed.json`     | **安装产物（自动生成，勿手改）**             | `install_hooks.py` 生成 | 把 `hooks.json`（或指定源）里的占位符替换成真实机器路径后的可加载配置；接入运行时后可用（**须先完成环境适配**，非开箱即用，见上方 ⚠️注意）                                                                                                                                                   |
 
 一句话：**`.json` 是手写源、`capture-draft.json` 是可选附加源（多一路最准的纠错捕获）、`.installed.json` 是编译输出**。日常只动前两个源文件，第三个由安装器重跑覆盖。
 
@@ -258,13 +259,13 @@ python scripts/init_deploy.py --json
 
 **探测依据（工具级，五路证据任一命中即视为"在用"）**：
 
-| 证据 | 说明 | 示例 |
-| ---------- | ------------------------------ | --------------------------------------------------------------- |
-| `exe` | 常见安装位置的可执行文件 | `%LOCALAPPDATA%\Programs\Trae\Trae.exe`、`/Applications/Cursor.app` |
-| `cmd` | PATH 中的 CLI 命令 | `claude`、`cursor`、`trae` |
-| `data` | 应用数据目录（"在用"强证据） | `%APPDATA%\Trae`、`~/Library/Application Support/Cursor` |
-| `user_cfg` | 用户级配置落点已存在 | `~/.codebuddy/settings.json` |
-| `proj_cfg` | 项目级配置落点已存在 | `<项目根>/.cursor/hooks.json` |
+| 证据       | 说明                         | 示例                                                                |
+| ---------- | ---------------------------- | ------------------------------------------------------------------- |
+| `exe`      | 常见安装位置的可执行文件     | `%LOCALAPPDATA%\Programs\Trae\Trae.exe`、`/Applications/Cursor.app` |
+| `cmd`      | PATH 中的 CLI 命令           | `claude`、`cursor`、`trae`                                          |
+| `data`     | 应用数据目录（"在用"强证据） | `%APPDATA%\Trae`、`~/Library/Application Support/Cursor`            |
+| `user_cfg` | 用户级配置落点已存在         | `~/.codebuddy/settings.json`                                        |
+| `proj_cfg` | 项目级配置落点已存在         | `<项目根>/.cursor/hooks.json`                                       |
 
 内置工具：CodeBuddy CN、Trae（Trae CN）、Cursor、Claude Code、Windsurf；**跨平台**且**不写死任何具体机器路径**（全部经 `%VAR%` / `~` 展开）。工具未探测到 → 不写。
 
@@ -316,23 +317,23 @@ python scripts/init_deploy.py --json
 
 #### 平台适配矩阵
 
-| 平台 | 工具名家族 | hooks 自动匹配（matcher） | 说明 |
+| 平台                    | 工具名家族                                     | hooks 自动匹配（matcher）               | 说明                                                                                                  |
 | ----------------------- | ---------------------------------------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------- | --------------- |
-| **CodeBuddy CN** | `write_to_file` / `replace_in_file` | ✅ 已覆盖 | 国内 IDE，代码/历史已确认 |
-| **Trae / Trae CN** | `Write` / `Edit` | ✅ 已覆盖 | 代码/历史已确认 |
-| **Cursor** | `Write` / `Edit` | ✅ 已覆盖 | 代码/历史已确认 |
-| **Cline** | `write_to_file` / `replace_in_file` | ✅ 已覆盖 | 寄生 VS Code，搜索核实其工具名与 CodeBuddy 同族 |
-| **Roo Code** | `write_to_file` / `replace_in_file` | ✅ 已覆盖 | Cline 分支，同族 |
-| **Qoder CN** | `write_to_file` / `replace_in_file` | ✅ 已覆盖 | 国内 IDE，v1.8.2「同类产品适配」已登记 |
-| **WorkBuddy** | `write_to_file` / `replace_in_file` | ✅ 已覆盖 | 国内 IDE，v1.8.2「同类产品适配」已登记 |
-| **Claude Code** | `Write` / `Edit` / `Bash` / `UserPromptSubmit` | ✅ PostToolUse；`UserPromptSubmit` 可选 | 支持事件最全，搜索核实其 hooks 含 `PreToolUse`/`PostToolUse`/`UserPromptSubmit`/`Stop`/`Notification` |
-| **Codex（OpenAI）** | `Bash` / 命令类 | ✅ 已覆盖 | 命令类家族 |
-| **OpenClaw（龙虾类）** | 命令类 | ✅ 已覆盖 | `capture-draft.json` 明确点名可在 `UserPromptSubmit` 挂捕获 |
-| **Gemini CLI** | `Bash` / 命令类 | ✅ 已覆盖 | 命令类家族，同 Claude/Codex 模式 |
-| **Windsurf（Codeium）** | `write_file` / `edit_file` | ⚠️ 需 ` | ` 追加 | 工具名与主流不同，在 matcher 补 `write_file | edit_file` 即可 |
-| **Zed** | 视配置 | ⚠️ 需确认 | 工具名随扩展形态变化，确认后追加 |
-| **Continue** | VS Code 扩展 | ⚠️ 需确认工具名 | 确认其工具名后追加到 matcher |
-| **Aider** | CLI 自有机制 | ❌ 非工具名匹配 | 走自带 hook / 包装层，不在本 matcher 范围 |
+| **CodeBuddy CN**        | `write_to_file` / `replace_in_file`            | ✅ 已覆盖                               | 国内 IDE，代码/历史已确认                                                                             |
+| **Trae / Trae CN**      | `Write` / `Edit`                               | ✅ 已覆盖                               | 代码/历史已确认                                                                                       |
+| **Cursor**              | `Write` / `Edit`                               | ✅ 已覆盖                               | 代码/历史已确认                                                                                       |
+| **Cline**               | `write_to_file` / `replace_in_file`            | ✅ 已覆盖                               | 寄生 VS Code，搜索核实其工具名与 CodeBuddy 同族                                                       |
+| **Roo Code**            | `write_to_file` / `replace_in_file`            | ✅ 已覆盖                               | Cline 分支，同族                                                                                      |
+| **Qoder CN**            | `write_to_file` / `replace_in_file`            | ✅ 已覆盖                               | 国内 IDE，v1.8.2「同类产品适配」已登记                                                                |
+| **WorkBuddy**           | `write_to_file` / `replace_in_file`            | ✅ 已覆盖                               | 国内 IDE，v1.8.2「同类产品适配」已登记                                                                |
+| **Claude Code**         | `Write` / `Edit` / `Bash` / `UserPromptSubmit` | ✅ PostToolUse；`UserPromptSubmit` 可选 | 支持事件最全，搜索核实其 hooks 含 `PreToolUse`/`PostToolUse`/`UserPromptSubmit`/`Stop`/`Notification` |
+| **Codex（OpenAI）**     | `Bash` / 命令类                                | ✅ 已覆盖                               | 命令类家族                                                                                            |
+| **OpenClaw（龙虾类）**  | 命令类                                         | ✅ 已覆盖                               | `capture-draft.json` 明确点名可在 `UserPromptSubmit` 挂捕获                                           |
+| **Gemini CLI**          | `Bash` / 命令类                                | ✅ 已覆盖                               | 命令类家族，同 Claude/Codex 模式                                                                      |
+| **Windsurf（Codeium）** | `write_file` / `edit_file`                     | ⚠️ 需 `                                 | ` 追加                                                                                                | 工具名与主流不同，在 matcher 补 `write_file | edit_file` 即可 |
+| **Zed**                 | 视配置                                         | ⚠️ 需确认                               | 工具名随扩展形态变化，确认后追加                                                                      |
+| **Continue**            | VS Code 扩展                                   | ⚠️ 需确认工具名                         | 确认其工具名后追加到 matcher                                                                          |
+| **Aider**               | CLI 自有机制                                   | ❌ 非工具名匹配                         | 走自带 hook / 包装层，不在本 matcher 范围                                                             |
 
 > ✅ = `hooks.json` matcher 已含该工具名家族，**接入并完成环境适配后自动匹配生效**；⚠️ = 在 matcher 用 `|` 追加对应工具名即可；❌ = 走另一套机制，本 hooks 不适用。
 
@@ -425,17 +426,17 @@ python scripts/init_deploy.py --json
 
 单个 reference 文件建议控制在 **400 行以内**；超过时考虑拆分（如「设计规范」与「实现规范」分离）或提取共性内容到独立 reference。当前体量分布（按行数降序）：
 
-| 文件 | 行数 | 评估 |
-| ------------------------------ | ------ | ------------------------------------------ |
-| frontend-design.md | 599 | 偏大，建议拆分「设计规范」与「实现规范」 |
-| project-memory-management.md | 525 | 偏大，职责内聚可暂保留 |
-| execution-safety.md | 434 | 偏大（超 400），机制集中度高，关注后续拆分 |
-| cms-development.md | 422 | 偏大，CMS 场景复杂度本身高 |
-| mysql-database.md | 381 | 合理（接近 400 上限，关注后续增长） |
-| karpathy-coding-guidelines.md | 378 | 合理（接近 400 上限，关注后续增长） |
-| code-review.md | 373 | 合理（接近 400 上限，关注后续增长） |
-| code-generation.md | 313 | 合理 |
-| 其余 37 个 | 76–288 | 健康（含 11 个工程纪律层专项） |
+| 文件                          | 行数   | 评估                                       |
+| ----------------------------- | ------ | ------------------------------------------ |
+| frontend-design.md            | 599    | 偏大，建议拆分「设计规范」与「实现规范」   |
+| project-memory-management.md  | 525    | 偏大，职责内聚可暂保留                     |
+| execution-safety.md           | 434    | 偏大（超 400），机制集中度高，关注后续拆分 |
+| cms-development.md            | 422    | 偏大，CMS 场景复杂度本身高                 |
+| mysql-database.md             | 381    | 合理（接近 400 上限，关注后续增长）        |
+| karpathy-coding-guidelines.md | 378    | 合理（接近 400 上限，关注后续增长）        |
+| code-review.md                | 373    | 合理（接近 400 上限，关注后续增长）        |
+| code-generation.md            | 313    | 合理                                       |
+| 其余 37 个                    | 76–288 | 健康（含 11 个工程纪律层专项）             |
 
 ### 跨文件步骤号一致性检查
 
@@ -455,13 +456,13 @@ python hooks/step_ref_check.py
 
 > 估算量级，非精确计费；基准：332 文件 / ~5 万行帝国 CMS 项目，图含 2890 有效依赖边，`MAX_NODES=80`（节点硬上限）。
 
-| 维度 | 常规 LLM 理解（无图谱） | 知识图谱方式 |
+| 维度            | 常规 LLM 理解（无图谱）                            | 知识图谱方式                                   |
 | --------------- | -------------------------------------------------- | ---------------------------------------------- |
-| 构建 / 索引成本 | 无（每次现读源码） | **0 token**（纯正则本地抽取，不进 LLM 上下文） |
-| 单次依赖查询 | 6k–60k token（把 5–50 个源文件喂进上下文理解依赖） | **1k–3k token**（返回子图 JSON，≤80 节点） |
-| 10 次任务累积 | 60k–600k token | 10k–30k token |
-| 跨会话复用 | 每次重读，不留存 | 图谱缓存复用，query 恒定 ~2k |
-| 上下文污染 | 大（源码占满上下文窗口） | 小（仅依赖拓扑，不含实现细节） |
+| 构建 / 索引成本 | 无（每次现读源码）                                 | **0 token**（纯正则本地抽取，不进 LLM 上下文） |
+| 单次依赖查询    | 6k–60k token（把 5–50 个源文件喂进上下文理解依赖） | **1k–3k token**（返回子图 JSON，≤80 节点）     |
+| 10 次任务累积   | 60k–600k token                                     | 10k–30k token                                  |
+| 跨会话复用      | 每次重读，不留存                                   | 图谱缓存复用，query 恒定 ~2k                   |
+| 上下文污染      | 大（源码占满上下文窗口）                           | 小（仅依赖拓扑，不含实现细节）                 |
 
 单次跨模块依赖查询的 token 消耗（ASCII 示意，取中值）：
 

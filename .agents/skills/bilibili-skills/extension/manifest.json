@@ -3,19 +3,8 @@
   "name": "Bilibili Bridge",
   "version": "1.0.0",
   "description": "B站创作中心自动化 Bridge - 连接本地 Python CLI",
-  "permissions": [
-    "tabs",
-    "cookies",
-    "scripting",
-    "alarms",
-    "debugger",
-    "storage"
-  ],
-  "host_permissions": [
-    "https://*.bilibili.com/*",
-    "https://bilibili.com/*",
-    "ws://localhost/*"
-  ],
+  "permissions": ["tabs", "cookies", "scripting", "alarms", "debugger", "storage"],
+  "host_permissions": ["https://*.bilibili.com/*", "https://bilibili.com/*", "ws://localhost/*"],
   "background": {
     "service_worker": "background.js"
   },

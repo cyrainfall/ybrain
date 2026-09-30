@@ -17,13 +17,13 @@ python scripts/cli.py probe    # 抓取当前页面元素（改版时排查选�
 `tests/test_static_consistency.py` 全是**静态**检查，不需要浏览器、不需要 mock，
 直接在源码上核对三类"只有连上浏览器才会暴露"的接线错误：
 
-| 检查 | 挡住的问题 |
-|------|-----------|
-| `page.*` 调用是否存在于 `BridgePage` | 方法名笔误（曾真实发生过） |
-| `_call("...")` 是否都被扩展实现 | Python 侧改名后忘了改 `background.js` |
-| 扩展实现的方法是否有调用方 | 扩展里遗留的改名残留 |
-| 五处 bridge 端口是否一致 | 端口只改了一半，表现是"扩展连不上" |
-| `selectors.py` 候选列表是否为空 | 空候选会让报错指向"页面改版"而不是真正的原因 |
+| 检查                                 | 挡住的问题                                   |
+| ------------------------------------ | -------------------------------------------- |
+| `page.*` 调用是否存在于 `BridgePage` | 方法名笔误（曾真实发生过）                   |
+| `_call("...")` 是否都被扩展实现      | Python 侧改名后忘了改 `background.js`        |
+| 扩展实现的方法是否有调用方           | 扩展里遗留的改名残留                         |
+| 五处 bridge 端口是否一致             | 端口只改了一半，表现是"扩展连不上"           |
+| `selectors.py` 候选列表是否为空      | 空候选会让报错指向"页面改版"而不是真正的原因 |
 
 改动 `bridge.py` / `background.js` / 端口 / `selectors.py` 后请先跑 `pytest`。
 
@@ -97,15 +97,15 @@ cli.py → BridgePage._call(method, params)
 编辑器根节点是 `.zone-container.editor-kit-container[contenteditable=true]`，行节点是
 `.ace-line`。它有一套**自己的行模型与光标模型**，实测行为：
 
-| 行为 | 结果 |
-|------|------|
+| 行为                                           | 结果                                                          |
+| ---------------------------------------------- | ------------------------------------------------------------- |
 | `document.execCommand("selectAll") + "delete"` | **清不掉** —— 旧内容会被 React 渲染回来，新内容只是叠加在前面 |
-| 程序化设置 DOM 选区（Range） | **被忽略** —— 光标不跟随，文字会插到编辑器自己的光标处 |
-| `execCommand("insertParagraph")` | 无效，行数不变 |
-| 真实 Enter（CDP 键盘事件） | 行数**也不变** |
-| `execCommand("insertHTML")` 传块级标签 | 块结构被压平成一行 |
-| `execCommand("insertText", "a\nb")` | 换行被吞掉 |
-| 一次性 `insertText` 写入整段 | ✅ 文字内容与顺序都正确 |
+| 程序化设置 DOM 选区（Range）                   | **被忽略** —— 光标不跟随，文字会插到编辑器自己的光标处        |
+| `execCommand("insertParagraph")`               | 无效，行数不变                                                |
+| 真实 Enter（CDP 键盘事件）                     | 行数**也不变**                                                |
+| `execCommand("insertHTML")` 传块级标签         | 块结构被压平成一行                                            |
+| `execCommand("insertText", "a\nb")`            | 换行被吞掉                                                    |
+| 一次性 `insertText` 写入整段                   | ✅ 文字内容与顺序都正确                                       |
 
 因此 `_fill_description` 的策略是：**只在编辑器为空时写、且一次写完**（多行压成一整段），
 非空时直接报错而不是叠加。写简介的文案要保证压平后仍然通顺（每行以标点结尾）。
@@ -132,13 +132,13 @@ Bridge → 刷新图标），否则 Chrome 仍在跑旧代码。判断方法：�
 
 ## CLI 子命令对照表
 
-| CLI 子命令 | 分类 |
-|--|--|
-| `check-login` | 认证 |
-| `login` / `get-qrcode` / `wait-login` | 认证 |
-| `send-code` / `verify-code` | 认证 |
-| `fill-publish-video` | 发布（填写） |
-| `publish-video` | 发布（一步） |
-| `click-publish` | 发布（确认） |
-| `save-draft` | 发布（草稿） |
-| `probe` / `page-info` | 调试 |
+| CLI 子命令                            | 分类         |
+| ------------------------------------- | ------------ |
+| `check-login`                         | 认证         |
+| `login` / `get-qrcode` / `wait-login` | 认证         |
+| `send-code` / `verify-code`           | 认证         |
+| `fill-publish-video`                  | 发布（填写） |
+| `publish-video`                       | 发布（一步） |
+| `click-publish`                       | 发布（确认） |
+| `save-draft`                          | 发布（草稿） |
+| `probe` / `page-info`                 | 调试         |

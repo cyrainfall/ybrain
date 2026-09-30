@@ -56,44 +56,44 @@ metadata:
 
 管理小红书登录状态和多账号切换。
 
-| 命令 | 功能 |
-|------|------|
-| `cli.py check-login` | 检查登录状态，返回推荐登录方式 |
-| `cli.py login` | 二维码登录（有界面环境） |
-| `cli.py send-code --phone <号码>` | 手机登录第一步：发送验证码 |
-| `cli.py verify-code --code <验证码>` | 手机登录第二步：提交验证码 |
-| `cli.py delete-cookies` | 清除 cookies（退出/切换账号） |
+| 命令                                 | 功能                           |
+| ------------------------------------ | ------------------------------ |
+| `cli.py check-login`                 | 检查登录状态，返回推荐登录方式 |
+| `cli.py login`                       | 二维码登录（有界面环境）       |
+| `cli.py send-code --phone <号码>`    | 手机登录第一步：发送验证码     |
+| `cli.py verify-code --code <验证码>` | 手机登录第二步：提交验证码     |
+| `cli.py delete-cookies`              | 清除 cookies（退出/切换账号）  |
 
 ### xhs-publish — 内容发布
 
 发布图文或视频内容到小红书。
 
-| 命令 | 功能 |
-|------|------|
-| `cli.py publish` | 图文发布（本地图片或 URL） |
-| `cli.py publish-video` | 视频发布 |
-| `publish_pipeline.py` | 发布流水线（含图片下载和登录检查） |
+| 命令                   | 功能                               |
+| ---------------------- | ---------------------------------- |
+| `cli.py publish`       | 图文发布（本地图片或 URL）         |
+| `cli.py publish-video` | 视频发布                           |
+| `publish_pipeline.py`  | 发布流水线（含图片下载和登录检查） |
 
 ### xhs-explore — 内容发现
 
 搜索笔记、查看详情、获取用户资料。
 
-| 命令 | 功能 |
-|------|------|
-| `cli.py list-feeds` | 获取首页推荐 Feed |
-| `cli.py search-feeds` | 关键词搜索笔记 |
+| 命令                     | 功能                   |
+| ------------------------ | ---------------------- |
+| `cli.py list-feeds`      | 获取首页推荐 Feed      |
+| `cli.py search-feeds`    | 关键词搜索笔记         |
 | `cli.py get-feed-detail` | 获取笔记完整内容和评论 |
-| `cli.py user-profile` | 获取用户主页信息 |
+| `cli.py user-profile`    | 获取用户主页信息       |
 
 ### xhs-interact — 社交互动
 
 发表评论、回复、点赞、收藏。
 
-| 命令 | 功能 |
-|------|------|
-| `cli.py post-comment` | 对笔记发表评论 |
-| `cli.py reply-comment` | 回复指定评论 |
-| `cli.py like-feed` | 点赞 / 取消点赞 |
+| 命令                   | 功能            |
+| ---------------------- | --------------- |
+| `cli.py post-comment`  | 对笔记发表评论  |
+| `cli.py reply-comment` | 回复指定评论    |
+| `cli.py like-feed`     | 点赞 / 取消点赞 |
 | `cli.py favorite-feed` | 收藏 / 取消收藏 |
 
 ### xhs-content-ops — 复合运营

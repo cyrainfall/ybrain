@@ -31,16 +31,16 @@ allowed-tools:
 
 ## 路由
 
-| 用户意图 | 模块 |
-|---|---|
-| 重设风格 | `wewrite-style` |
-| 只要选题 | `wewrite-topic` |
-| 检查文章 | `wewrite-review` |
-| 封面或配图 | `wewrite-visual` |
+| 用户意图                   | 模块              |
+| -------------------------- | ----------------- |
+| 重设风格                   | `wewrite-style`   |
+| 只要选题                   | `wewrite-topic`   |
+| 检查文章                   | `wewrite-review`  |
+| 封面或配图                 | `wewrite-visual`  |
 | 排版、预览、草稿箱、图片帖 | `wewrite-publish` |
-| 学习修改、范文、主题 | `wewrite-learn` |
-| 数据复盘 | `wewrite-stats` |
-| 多平台改写 | `wewrite-rewrite` |
+| 学习修改、范文、主题       | `wewrite-learn`   |
+| 数据复盘                   | `wewrite-stats`   |
+| 多平台改写                 | `wewrite-rewrite` |
 
 环境有 Skill 工具时激活同名 skill；否则完整读取兄弟目录的 `SKILL.md` 后执行。
 

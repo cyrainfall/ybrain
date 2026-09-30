@@ -4,23 +4,23 @@ This document declares all RAM permissions required by the Workbench CLI, in `{P
 
 ## Core Permissions
 
-| Permission | Description |
-| --- | --- |
-| `ecs-workbench:LoginECSInstance` | Establish a session to an ECS instance via Workbench (required for exec, upload, download) |
-| `ecs-workbench:ChatMessages` | Send and receive messages over the Workbench session channel (command I/O, file transfer data) |
+| Permission                       | Description                                                                                    |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `ecs-workbench:LoginECSInstance` | Establish a session to an ECS instance via Workbench (required for exec, upload, download)     |
+| `ecs-workbench:ChatMessages`     | Send and receive messages over the Workbench session channel (command I/O, file transfer data) |
 
 ## ECS Permissions
 
-| Permission | Description |
-| --- | --- |
-| `ecs:DescribeInstances` | List and query ECS instance metadata (required for `workbench list ecs`) |
-| `ecs:DescribeCloudAssistantStatus` | Check Cloud Assistant agent status on target instance (connectivity pre-check) |
-| `ecs:StartTerminalSession` | Initiate a terminal session to the instance (underlying transport for exec/transfer) |
+| Permission                         | Description                                                                          |
+| ---------------------------------- | ------------------------------------------------------------------------------------ |
+| `ecs:DescribeInstances`            | List and query ECS instance metadata (required for `workbench list ecs`)             |
+| `ecs:DescribeCloudAssistantStatus` | Check Cloud Assistant agent status on target instance (connectivity pre-check)       |
+| `ecs:StartTerminalSession`         | Initiate a terminal session to the instance (underlying transport for exec/transfer) |
 
 ## Service-Linked Role
 
-| Permission | Description | Condition |
-| --- | --- | --- |
+| Permission                    | Description                                                            | Condition                                             |
+| ----------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------- |
 | `ram:CreateServiceLinkedRole` | Create the Workbench service-linked role on first use (one-time setup) | `ram:ServiceName` equals `workbench.ecs.aliyuncs.com` |
 
 ## Notes

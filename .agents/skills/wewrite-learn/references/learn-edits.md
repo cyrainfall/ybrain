@@ -17,13 +17,13 @@ wewrite learn-edits --draft {draft_path} --final {final_path}
 
 ```yaml
 patterns:
-  - type: expression        # word_sub / para_delete / para_add / structure / title / tone / expression
+  - type: expression # word_sub / para_delete / para_add / structure / title / tone / expression
     key: shorter_paragraphs
     description: "这次把教程中的长段拆短"
     rule: "教程说明段每段只处理一个操作"
-    scope: content_type     # global / content_type / framework / persona
-    scope_value: tutorial   # global 时留空
-    confirmed: false        # 只有用户明确说这是长期偏好时才设 true
+    scope: content_type # global / content_type / framework / persona
+    scope_value: tutorial # global 时留空
+    confirmed: false # 只有用户明确说这是长期偏好时才设 true
 ```
 
 优先选择最窄且真实的范围。文章结构、标题和语气的单次修改通常与题型有关，不应默认全局。

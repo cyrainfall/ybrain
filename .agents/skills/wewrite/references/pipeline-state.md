@@ -17,12 +17,12 @@
 ```yaml
 version: 4
 run_id: "20260715-120000-a1b2c3"
-status: active                 # active / failed / completed
-mode: draft                    # draft / complete / publish
+status: active # active / failed / completed
+mode: draft # draft / complete / publish
 permissions:
-  publish: false               # 只有用户明确要求发布才为 true
+  publish: false # 只有用户明确要求发布才为 true
 visual:
-  mode: none                   # none / prompts / cover / full
+  mode: none # none / prompts / cover / full
   max_images: 4
   max_cost: null
 flags:
@@ -53,7 +53,7 @@ seo:
   tags: []
   quality_score: null
 editorial:
-  decision: null             # pass / revise / needs_input
+  decision: null # pass / revise / needs_input
   pass_number: null
   publishable: false
 provenance:

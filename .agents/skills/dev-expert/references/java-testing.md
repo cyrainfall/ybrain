@@ -29,15 +29,15 @@
 
 ## 数据与外部依赖
 
-| 依赖类型 | 推荐策略 | 说明 |
-| - | - | - |
-| 关系型数据库 | `@DataJpaTest` + H2（快）或 **Testcontainers**（行为一致性优先） | MySQL/PostgreSQL 特有语法、函数、锁行为必须用 Testcontainers 验证 |
-| 事务 | 测试方法加 `@Transactional` 自动回滚 | ⚠️ 它会让延迟约束、异步副作用、`afterCommit` **不生效**；需真实提交时用 `@Commit` 或 Testcontainers |
-| 缓存 / Redis | Testcontainers 或 `@MockBean` 替身 | 断言"命中/未命中"与过期行为，不只断言返回值 |
-| 消息队列 | Testcontainers 或注入的 mock 生产者 | 断言消息内容、发送次数、重试次数 |
-| 外部 HTTP | WireMock / MockWebServer | 必须显式模拟**超时**与 **5xx**，验证降级路径 |
-| 时间 | 注入 `Clock`，`Clock.fixed(...)` | 固定"现在"后断言过期/超时逻辑 |
-| 文件系统 | JUnit 5 `@TempDir` | 不写真实业务目录 |
+| 依赖类型     | 推荐策略                                                         | 说明                                                                                                |
+| ------------ | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 关系型数据库 | `@DataJpaTest` + H2（快）或 **Testcontainers**（行为一致性优先） | MySQL/PostgreSQL 特有语法、函数、锁行为必须用 Testcontainers 验证                                   |
+| 事务         | 测试方法加 `@Transactional` 自动回滚                             | ⚠️ 它会让延迟约束、异步副作用、`afterCommit` **不生效**；需真实提交时用 `@Commit` 或 Testcontainers |
+| 缓存 / Redis | Testcontainers 或 `@MockBean` 替身                               | 断言"命中/未命中"与过期行为，不只断言返回值                                                         |
+| 消息队列     | Testcontainers 或注入的 mock 生产者                              | 断言消息内容、发送次数、重试次数                                                                    |
+| 外部 HTTP    | WireMock / MockWebServer                                         | 必须显式模拟**超时**与 **5xx**，验证降级路径                                                        |
+| 时间         | 注入 `Clock`，`Clock.fixed(...)`                                 | 固定"现在"后断言过期/超时逻辑                                                                       |
+| 文件系统     | JUnit 5 `@TempDir`                                               | 不写真实业务目录                                                                                    |
 
 - 测试数据隔离：数据库用回滚或每类独立 schema；**禁止依赖其他测试的残留数据**。
 
@@ -80,14 +80,14 @@ class OrderControllerTest {
 
 ## Mock 与替身
 
-| 场景 | 工具 | 断言方式 |
-| - | - | - |
-| 依赖接口行为 | Mockito `when / thenReturn / thenThrow` | `verify(...)`、`ArgumentCaptor` 捕获入参 |
-| 静态方法 / 构造器 | Mockito `mockStatic` / `mockConstruction`（**谨慎使用**，优先重构为可注入依赖） | `verify` |
-| 外部 HTTP 服务 | WireMock / MockWebServer | 请求匹配 + 响应桩（含超时、5xx） |
-| 数据库真实行为 | Testcontainers | 真实 SQL 与约束断言 |
-| 消息队列 | Testcontainers / mock 生产者 | 消息内容与发送次数 |
-| 时间 | 注入 `Clock` | 固定时间下的行为断言 |
+| 场景              | 工具                                                                            | 断言方式                                 |
+| ----------------- | ------------------------------------------------------------------------------- | ---------------------------------------- |
+| 依赖接口行为      | Mockito `when / thenReturn / thenThrow`                                         | `verify(...)`、`ArgumentCaptor` 捕获入参 |
+| 静态方法 / 构造器 | Mockito `mockStatic` / `mockConstruction`（**谨慎使用**，优先重构为可注入依赖） | `verify`                                 |
+| 外部 HTTP 服务    | WireMock / MockWebServer                                                        | 请求匹配 + 响应桩（含超时、5xx）         |
+| 数据库真实行为    | Testcontainers                                                                  | 真实 SQL 与约束断言                      |
+| 消息队列          | Testcontainers / mock 生产者                                                    | 消息内容与发送次数                       |
+| 时间              | 注入 `Clock`                                                                    | 固定时间下的行为断言                     |
 
 - Mock 只用于隔离**外部边界或昂贵依赖**；核心业务规则必须真实执行。
 - **禁止空测试**：只验证"mock 被调用"而不验证业务结果的测试视为无效。

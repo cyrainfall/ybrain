@@ -34,14 +34,14 @@ metadata:
 
 **本技能允许使用的全部 CLI 子命令：**
 
-| 子命令 | 用途 |
-|--------|------|
-| `check-login` | 检查登录状态，返回昵称与落地 URL |
-| `get-qrcode` | 截取登录二维码并保存到本地（非阻塞） |
-| `wait-login` | 等待扫码完成 |
-| `login` | 扫码登录并阻塞等待结果 |
-| `send-code` | 短信登录第一步：发送验证码 |
-| `verify-code` | 短信登录第二步：提交验证码 |
+| 子命令        | 用途                                 |
+| ------------- | ------------------------------------ |
+| `check-login` | 检查登录状态，返回昵称与落地 URL     |
+| `get-qrcode`  | 截取登录二维码并保存到本地（非阻塞） |
+| `wait-login`  | 等待扫码完成                         |
+| `login`       | 扫码登录并阻塞等待结果               |
+| `send-code`   | 短信登录第一步：发送验证码           |
+| `verify-code` | 短信登录第二步：提交验证码           |
 
 ## 输入判断
 
@@ -114,12 +114,12 @@ python scripts/cli.py verify-code --code 123456
 
 ## 失败处理
 
-| 现象 | 处理 |
-|------|------|
-| 二维码过期 / `wait-login` 超时 | 重新 `get-qrcode` 拿一张新的，再 `wait-login` |
-| 用户说"扫了但没反应" | B站要求手机端**点确认**才算完成；提示用户在 App 里点一下 |
-| 验证码发送失败、提示频繁 | 说明被限流，让用户等几分钟再试，**不要连续重发** |
-| 未找到手机号 / 验证码输入框 | 登录页改版了。运行 `python scripts/cli.py probe --url "https://passport.bilibili.com/login"` 后更新 `selectors.py` 的 `PHONE_INPUTS` / `CODE_INPUTS` |
-| 未找到二维码元素 | `get-qrcode` 会自动退化成整页截图。若截图里也找不到二维码，让用户手动打开 `https://passport.bilibili.com/login` 扫码，扫完再 `check-login` |
-| 扩展未连接 | 提示用户确认 `chrome://extensions/` 中 Bilibili Bridge 已启用；bridge server 由 CLI 自动拉起，失败时可手动运行 `python scripts/bridge_server.py` |
-| 用户要求导出 cookie 给别的工具 | **拒绝**。本技能不导出登录凭证 |
+| 现象                           | 处理                                                                                                                                                 |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 二维码过期 / `wait-login` 超时 | 重新 `get-qrcode` 拿一张新的，再 `wait-login`                                                                                                        |
+| 用户说"扫了但没反应"           | B站要求手机端**点确认**才算完成；提示用户在 App 里点一下                                                                                             |
+| 验证码发送失败、提示频繁       | 说明被限流，让用户等几分钟再试，**不要连续重发**                                                                                                     |
+| 未找到手机号 / 验证码输入框    | 登录页改版了。运行 `python scripts/cli.py probe --url "https://passport.bilibili.com/login"` 后更新 `selectors.py` 的 `PHONE_INPUTS` / `CODE_INPUTS` |
+| 未找到二维码元素               | `get-qrcode` 会自动退化成整页截图。若截图里也找不到二维码，让用户手动打开 `https://passport.bilibili.com/login` 扫码，扫完再 `check-login`           |
+| 扩展未连接                     | 提示用户确认 `chrome://extensions/` 中 Bilibili Bridge 已启用；bridge server 由 CLI 自动拉起，失败时可手动运行 `python scripts/bridge_server.py`     |
+| 用户要求导出 cookie 给别的工具 | **拒绝**。本技能不导出登录凭证                                                                                                                       |

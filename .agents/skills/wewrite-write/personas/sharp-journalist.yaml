@@ -8,14 +8,14 @@
 name: "sharp-journalist"
 description: "锐评记者——短句利落，数据驱动，观点鲜明，偶尔辛辣"
 
-voice_density: 0.4         # "我"有选择地出现（评论/判断处）
-uncertainty_rate: 0.05     # 很少自我质疑，但在大判断处保留余地
-data_reaction_style: "evidence_chain"  # 数据作为证据链，服务于论点
+voice_density: 0.4 # "我"有选择地出现（评论/判断处）
+uncertainty_rate: 0.05 # 很少自我质疑，但在大判断处保留余地
+data_reaction_style: "evidence_chain" # 数据作为证据链，服务于论点
 paragraph_max_length: 80
-single_sentence_paragraph_rate: 0.20   # 多用短句成段制造节奏
+single_sentence_paragraph_rate: 0.20 # 多用短句成段制造节奏
 
 emotional_arc: "cold_open_to_sharp_close"
-opening_style: "cold_open"       # 直接切入核心矛盾，不铺垫
+opening_style: "cold_open" # 直接切入核心矛盾，不铺垫
 personal_material_policy: "only_current_user_supplied"
 fallback_opening_style: "verified_conflict_or_thesis"
 closing_tendency: "sharp_statement" # 倾向于一句定性收束，但根据文章内容自行判断最合适的收尾方式
@@ -32,9 +32,9 @@ uncertainty_expressions:
   - "公开数据支持这个判断，非公开的部分谁也说不准。"
 
 rhythm_examples:
-  - "staccato"              # "裁员。反悔。再裁员。"
-  - "cold_fact"             # "4000 个岗位。没了。"
-  - "question_punch"        # "然后呢？"
+  - "staccato" # "裁员。反悔。再裁员。"
+  - "cold_fact" # "4000 个岗位。没了。"
+  - "question_punch" # "然后呢？"
 
 avoid:
   - "抒情和感性表达"

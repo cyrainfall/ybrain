@@ -71,15 +71,15 @@ public function test_user_can_update_own_profile(): void
 
 ## Fake 与 Mock
 
-| 工具 | 用途 | 断言 |
-| - | - | - |
-| `Queue::fake()` | 队列任务 | `assertPushed()`、`assertNothingPushed()` |
-| `Event::fake()` | 领域事件 | `assertDispatched()` |
-| `Notification::fake()` | 通知 | `assertSentTo()` |
-| `Mail::fake()` | 邮件 | `assertSent()`、`assertQueued()` |
-| `Storage::fake()` | 上传/文件写入 | `assertExists()`、`assertMissing()` |
-| `Http::fake()` | 外部 API | `assertSent()`、模拟超时/错误 |
-| `Bus::fake()` | chain/batch | `assertChained()`、`assertBatched()` |
+| 工具                   | 用途          | 断言                                      |
+| ---------------------- | ------------- | ----------------------------------------- |
+| `Queue::fake()`        | 队列任务      | `assertPushed()`、`assertNothingPushed()` |
+| `Event::fake()`        | 领域事件      | `assertDispatched()`                      |
+| `Notification::fake()` | 通知          | `assertSentTo()`                          |
+| `Mail::fake()`         | 邮件          | `assertSent()`、`assertQueued()`          |
+| `Storage::fake()`      | 上传/文件写入 | `assertExists()`、`assertMissing()`       |
+| `Http::fake()`         | 外部 API      | `assertSent()`、模拟超时/错误             |
+| `Bus::fake()`          | chain/batch   | `assertChained()`、`assertBatched()`      |
 
 服务类 mock 只用于隔离外部边界或昂贵依赖；核心业务规则优先真实执行，避免测试只验证 mock 调用。
 

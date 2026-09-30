@@ -60,23 +60,23 @@ metadata:
 
 ### douyin-auth — 认证管理
 
-| 命令 | 功能 |
-|------|------|
-| `cli.py check-login` | 检查登录状态，返回昵称与落地 URL |
-| `cli.py get-qrcode` | 截取登录二维码并保存到本地（非阻塞） |
-| `cli.py wait-login` | 等待扫码完成（配合 get-qrcode） |
-| `cli.py login` | 扫码登录并阻塞等待结果 |
-| `cli.py send-code --phone <号码>` | 验证码登录第一步：发送验证码 |
-| `cli.py verify-code --code <验证码>` | 验证码登录第二步：提交验证码 |
+| 命令                                 | 功能                                 |
+| ------------------------------------ | ------------------------------------ |
+| `cli.py check-login`                 | 检查登录状态，返回昵称与落地 URL     |
+| `cli.py get-qrcode`                  | 截取登录二维码并保存到本地（非阻塞） |
+| `cli.py wait-login`                  | 等待扫码完成（配合 get-qrcode）      |
+| `cli.py login`                       | 扫码登录并阻塞等待结果               |
+| `cli.py send-code --phone <号码>`    | 验证码登录第一步：发送验证码         |
+| `cli.py verify-code --code <验证码>` | 验证码登录第二步：提交验证码         |
 
 ### douyin-publish — 视频发布
 
-| 命令 | 功能 |
-|------|------|
+| 命令                        | 功能                         |
+| --------------------------- | ---------------------------- |
 | `cli.py fill-publish-video` | 上传视频并填写表单（不发布） |
-| `cli.py click-publish` | 点击「发布」并等待平台反馈 |
-| `cli.py save-draft` | 保存为草稿 |
-| `cli.py publish-video` | 一步完成上传 + 填写 + 发布 |
+| `cli.py click-publish`      | 点击「发布」并等待平台反馈   |
+| `cli.py save-draft`         | 保存为草稿                   |
+| `cli.py publish-video`      | 一步完成上传 + 填写 + 发布   |
 
 ## 快速开始
 

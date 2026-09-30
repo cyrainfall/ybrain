@@ -20,22 +20,26 @@
 
 ```markdown
 ## 项目概览
+
 - 技术栈：
 - 分层架构：
 - 构建工具：
 
 ## 核心流程
+
 1. 入口：
 2. 业务逻辑：
 3. 数据访问：
 4. 外部依赖：
 
 ## 关键类说明
+
 | 类名 | 职责 | 关键方法 |
-| --- | --- | --- |
-| ... | ... | ... |
+| ---- | ---- | -------- |
+| ...  | ...  | ...      |
 
 ## 质量与风险
+
 - 正确性：
 - 性能：
 - 安全：
@@ -61,16 +65,16 @@ src/main/java/com/example/
 
 ### 常见注解速查
 
-| 场景 | 注解 |
-| - | - |
+| 场景            | 注解                                                                |
+| --------------- | ------------------------------------------------------------------- |
 | REST Controller | `@RestController`, `@RequestMapping`, `@GetMapping`, `@PostMapping` |
-| 服务层 | `@Service`, `@Transactional` |
-| 仓储层 | `@Repository`, `@Mapper` |
-| 依赖注入 | 构造器注入、`@RequiredArgsConstructor` |
-| 配置 | `@Configuration`, `@Bean`, `@ConfigurationProperties` |
-| 参数校验 | `@Valid`, `@Validated`, `@NotNull`, `@NotBlank`, `@Size` |
-| 缓存 | `@Cacheable`, `@CacheEvict`, `@CachePut` |
-| 异常处理 | `@RestControllerAdvice`, `@ExceptionHandler` |
+| 服务层          | `@Service`, `@Transactional`                                        |
+| 仓储层          | `@Repository`, `@Mapper`                                            |
+| 依赖注入        | 构造器注入、`@RequiredArgsConstructor`                              |
+| 配置            | `@Configuration`, `@Bean`, `@ConfigurationProperties`               |
+| 参数校验        | `@Valid`, `@Validated`, `@NotNull`, `@NotBlank`, `@Size`            |
+| 缓存            | `@Cacheable`, `@CacheEvict`, `@CachePut`                            |
+| 异常处理        | `@RestControllerAdvice`, `@ExceptionHandler`                        |
 
 ## 编码规范
 

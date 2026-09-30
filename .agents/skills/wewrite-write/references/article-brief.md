@@ -21,7 +21,7 @@ thesis:
   counterpoint: "最强反方或替代解释"
 personal_materials:
   available: false
-  items: []                 # 只记录用户在本次任务明确提供的经历、观察或原话
+  items: [] # 只记录用户在本次任务明确提供的经历、观察或原话
 framework: "观点"
 sections:
   - purpose: "本节推进什么"
@@ -42,9 +42,9 @@ version: 1
 claims:
   - id: C1
     text: "正文准备表达的主张"
-    type: fact              # fact / inference / opinion / user_experience
-    source_ids: []          # 对应 sources.yaml 的 id；意见可为空
-    status: supported       # supported / bounded / unsupported
+    type: fact # fact / inference / opinion / user_experience
+    source_ids: [] # 对应 sources.yaml 的 id；意见可为空
+    status: supported # supported / bounded / unsupported
     boundary: "适用范围或不确定性"
 ```
 

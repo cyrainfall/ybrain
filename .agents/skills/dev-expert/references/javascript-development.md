@@ -29,12 +29,12 @@
 
 ### 工作流概览
 
-| 步骤 | 检查项 | 执行方式 | 要点 |
-| - | - | - | - |
-| 1 | Node.js 版本 | `node --version` | >= 15.0.0（推荐 18+），低于 15 须升级或在 README 中标注兼容范围 |
-| 2 | 语法正确性 | `node --check <file>` | 静态分析，检测不兼容的 ES6+ 特性、语法错误 |
-| 3 | 代码规范修复 | 人工 / linter 自动修复 | 全角符号转半角、统一引号、补全分号、移除 `var` |
-| 4 | 可执行性验证 | `node -e "<code>"` 或直接运行 | 试运行验证无运行时错误，检查依赖项是否可用 |
+| 步骤 | 检查项       | 执行方式                      | 要点                                                            |
+| ---- | ------------ | ----------------------------- | --------------------------------------------------------------- |
+| 1    | Node.js 版本 | `node --version`              | >= 15.0.0（推荐 18+），低于 15 须升级或在 README 中标注兼容范围 |
+| 2    | 语法正确性   | `node --check <file>`         | 静态分析，检测不兼容的 ES6+ 特性、语法错误                      |
+| 3    | 代码规范修复 | 人工 / linter 自动修复        | 全角符号转半角、统一引号、补全分号、移除 `var`                  |
+| 4    | 可执行性验证 | `node -e "<code>"` 或直接运行 | 试运行验证无运行时错误，检查依赖项是否可用                      |
 
 ### 步骤 1：Node.js 版本检查
 
@@ -43,6 +43,7 @@
 ### 步骤 2：语法检查
 
 使用 `node --check` 对文件做静态语法分析，无需实际执行代码即可捕获：
+
 - 语法错误（括号不匹配、非法 token 等）
 - 不兼容的 ES6+ 特性（当 Node 版本过低时）
 - 严格模式违规
@@ -52,6 +53,7 @@
 ### 步骤 3：代码规范修复
 
 检查并修复常见编码问题：
+
 - 全角标点符号（中文逗号、引号）误入代码
 - 文件编码异常（非 UTF-8）
 - 常见语法陷阱（`var` 声明、缺少分号、`==` 应改为 `===`）
@@ -61,6 +63,7 @@
 ### 步骤 4：可执行性验证
 
 使用 `node -e` 在隔离环境试运行代码片段，或直接 `node <file>` 执行完整文件，验证：
+
 - 无运行时错误（`ReferenceError`、`TypeError` 等）
 - 所有 `import` / `require` 的依赖项可正常解析
 - 输出符合预期
@@ -106,12 +109,15 @@
   - 把 `scrollbars=auto,resizable=yes` 放到 features 串**末尾**，使最终拼接段为真实非空串：
     ```js
     window.open(
-      u, 'w',
-      'width=900,height=600'
-      + ',left=' + Math.floor((screen.width - 900) / 2)
-      + ',top='  + Math.floor((screen.height - 600) / 2)
-      + ',scrollbars=auto,resizable=yes'
-    );
+      u,
+      "w",
+      "width=900,height=600" +
+        ",left=" +
+        Math.floor((screen.width - 900) / 2) +
+        ",top=" +
+        Math.floor((screen.height - 600) / 2) +
+        ",scrollbars=auto,resizable=yes",
+    )
     ```
 - 居中坐标公式：`left=Math.floor((screen.width-W)/2)`、`top=Math.floor((screen.height-H)/2)`。
 
@@ -138,118 +144,118 @@
 
 ### 规则分类总览
 
-| 优先级 | 分类 | 影响级别 | 前缀 | 规则数 |
-| - | - | - | - | - |
-| 1 | 模块系统与导入 | CRITICAL | `module-` | 6 |
-| 2 | 语言特性 | CRITICAL | `lang-` | 8 |
-| 3 | 类型安全与 JSDoc | HIGH | `type-` | 6 |
-| 4 | 命名约定 | HIGH | `naming-` | 6 |
-| 5 | 控制流与错误处理 | MEDIUM-HIGH | `control-` | 5 |
-| 6 | 函数与参数 | MEDIUM | `func-` | 5 |
-| 7 | 对象与数组 | MEDIUM | `data-` | 6 |
-| 8 | 格式与风格 | LOW | `format-` | 5 |
+| 优先级 | 分类             | 影响级别    | 前缀       | 规则数 |
+| ------ | ---------------- | ----------- | ---------- | ------ |
+| 1      | 模块系统与导入   | CRITICAL    | `module-`  | 6      |
+| 2      | 语言特性         | CRITICAL    | `lang-`    | 8      |
+| 3      | 类型安全与 JSDoc | HIGH        | `type-`    | 6      |
+| 4      | 命名约定         | HIGH        | `naming-`  | 6      |
+| 5      | 控制流与错误处理 | MEDIUM-HIGH | `control-` | 5      |
+| 6      | 函数与参数       | MEDIUM      | `func-`    | 5      |
+| 7      | 对象与数组       | MEDIUM      | `data-`    | 6      |
+| 8      | 格式与风格       | LOW         | `format-`  | 5      |
 
 ### 分类 1：模块系统与导入（CRITICAL）
 
-| 规则 | 说明 |
-| - | - |
-| 避免循环依赖 | 循环导入导致加载失败，重构为单向依赖或延迟导入 |
+| 规则                   | 说明                                                              |
+| ---------------------- | ----------------------------------------------------------------- |
+| 避免循环依赖           | 循环导入导致加载失败，重构为单向依赖或延迟导入                    |
 | import 加 `.js` 扩展名 | `import { foo } from './bar.js'` 而非 `'./bar'`（仅独立模块场景） |
-| 优先命名导出 | `export const foo` 优于 `export default`，保证重构安全和一致性 |
-| 禁止重复导入 | 同一文件只能 import 一次，合并到单条语句 |
-| 保持原名导入 | 不滥用 `import { foo as bar }`，别名会降低可读性 |
-| 标准文件结构 | 按固定顺序排列：license → imports → 主体代码 |
+| 优先命名导出           | `export const foo` 优于 `export default`，保证重构安全和一致性    |
+| 禁止重复导入           | 同一文件只能 import 一次，合并到单条语句                          |
+| 保持原名导入           | 不滥用 `import { foo as bar }`，别名会降低可读性                  |
+| 标准文件结构           | 按固定顺序排列：license → imports → 主体代码                      |
 
 ### 分类 2：语言特性（CRITICAL）
 
-| 规则 | 说明 |
-| - | - |
-| `const` > `let` > 禁用 `var` | const 默认，仅当需要重赋值时用 let |
-| ES6 class 替代 prototype | `class Foo {}` 而非 `Foo.prototype.method = ...` |
-| 显式分号 | 每条语句末尾加分号，不依赖 ASI |
-| 禁止 `eval` / `Function` | 安全风险 + 性能差 |
-| 禁止修改内置原型 | `Array.prototype.myMethod = ...` 永远不允许 |
-| 仅用标准 ECMAScript | 不用非标准扩展（如 `__proto__`、`function.caller`） |
-| 禁止原始值包装对象 | 不用 `new String()` / `new Boolean()` / `new Number()` |
-| 禁止 `with` 语句 | 作用域不可预测，严格模式已禁用 |
+| 规则                         | 说明                                                   |
+| ---------------------------- | ------------------------------------------------------ |
+| `const` > `let` > 禁用 `var` | const 默认，仅当需要重赋值时用 let                     |
+| ES6 class 替代 prototype     | `class Foo {}` 而非 `Foo.prototype.method = ...`       |
+| 显式分号                     | 每条语句末尾加分号，不依赖 ASI                         |
+| 禁止 `eval` / `Function`     | 安全风险 + 性能差                                      |
+| 禁止修改内置原型             | `Array.prototype.myMethod = ...` 永远不允许            |
+| 仅用标准 ECMAScript          | 不用非标准扩展（如 `__proto__`、`function.caller`）    |
+| 禁止原始值包装对象           | 不用 `new String()` / `new Boolean()` / `new Number()` |
+| 禁止 `with` 语句             | 作用域不可预测，严格模式已禁用                         |
 
 ### 分类 3：类型安全与 JSDoc（HIGH）
 
-| 规则 | 说明 |
-| - | - |
-| 类型转换用括号 | `/** @type {!Foo} */ (foo)` |
-| 枚举标注字面量 | `/** @enum {string} */` 并列出静态字面值 |
-| 显式可空修饰符 | `{?Type}` 表示可为 null/undefined，不用隐式 `!Type` |
-| 导出函数必须 JSDoc | 所有 `export` 的函数/类都要加 JSDoc 注释 |
-| 模板参数必须指定 | `@template T` 声明后使用 |
-| 复杂类型用 `@typedef` | 对象结构超过 2 层或跨文件复用时定义 `@typedef` |
+| 规则                  | 说明                                                |
+| --------------------- | --------------------------------------------------- |
+| 类型转换用括号        | `/** @type {!Foo} */ (foo)`                         |
+| 枚举标注字面量        | `/** @enum {string} */` 并列出静态字面值            |
+| 显式可空修饰符        | `{?Type}` 表示可为 null/undefined，不用隐式 `!Type` |
+| 导出函数必须 JSDoc    | 所有 `export` 的函数/类都要加 JSDoc 注释            |
+| 模板参数必须指定      | `@template T` 声明后使用                            |
+| 复杂类型用 `@typedef` | 对象结构超过 2 层或跨文件复用时定义 `@typedef`      |
 
 ### 分类 4：命名约定（HIGH）
 
-| 规则 | 说明 |
-| - | - |
-| 常量用 CONSTANT_CASE | `const MAX_SIZE = 100` |
-| 描述性命名优于简短命名 | `getUserById` 而非 `getUsr` |
-| 文件用小写+破折号/下划线 | `user-service.js` 或 `user_service.js` |
-| 方法和变量 lowerCamelCase | `getUserName()`、`let userName` |
-| 禁止 `$` 前缀 | 不用 `$name`、`$$element` |
-| 类名 UpperCamelCase | `class UserController {}` |
+| 规则                      | 说明                                   |
+| ------------------------- | -------------------------------------- |
+| 常量用 CONSTANT_CASE      | `const MAX_SIZE = 100`                 |
+| 描述性命名优于简短命名    | `getUserById` 而非 `getUsr`            |
+| 文件用小写+破折号/下划线  | `user-service.js` 或 `user_service.js` |
+| 方法和变量 lowerCamelCase | `getUserName()`、`let userName`        |
+| 禁止 `$` 前缀             | 不用 `$name`、`$$element`              |
+| 类名 UpperCamelCase       | `class UserController {}`              |
 
 ### 分类 5：控制流与错误处理（MEDIUM-HIGH）
 
-| 规则 | 说明 |
-| - | - |
-| 空 catch 必须注释 | `catch (e) { // 预期情况：... }` |
-| `for-of` 优于 `for-in` | 遍历数组用 `for-of`，对象键用 `Object.keys()` |
-| 严格相等 `===` | 除 `== null`（同时检查 null/undefined）外一律 `===` |
-| switch 必须有 default | 即使 default 为空，也要显式写出 |
-| throw Error 对象 | `throw new Error('msg')` 而非 `throw 'msg'` |
+| 规则                   | 说明                                                |
+| ---------------------- | --------------------------------------------------- |
+| 空 catch 必须注释      | `catch (e) { // 预期情况：... }`                    |
+| `for-of` 优于 `for-in` | 遍历数组用 `for-of`，对象键用 `Object.keys()`       |
+| 严格相等 `===`         | 除 `== null`（同时检查 null/undefined）外一律 `===` |
+| switch 必须有 default  | 即使 default 为空，也要显式写出                     |
+| throw Error 对象       | `throw new Error('msg')` 而非 `throw 'msg'`         |
 
 ### 分类 6：函数与参数（MEDIUM）
 
-| 规则 | 说明 |
-| - | - |
-| 嵌套函数优先箭头函数 | 回调用 `() => {}`，保持 `this` 词法绑定 |
-| 箭头参数加括号 | `(x, y) => x + y` 而非 `x, y => x + y` |
-| 默认参数代替条件判断 | `function fn(x = 10)` 而非 `x = x \|\| 10` |
-| rest 参数代替 `arguments` | `(...args) => {}` 而非 `arguments[0]` |
-| spread 代替 `apply` | `fn(...args)` 而非 `fn.apply(null, args)` |
+| 规则                      | 说明                                       |
+| ------------------------- | ------------------------------------------ |
+| 嵌套函数优先箭头函数      | 回调用 `() => {}`，保持 `this` 词法绑定    |
+| 箭头参数加括号            | `(x, y) => x + y` 而非 `x, y => x + y`     |
+| 默认参数代替条件判断      | `function fn(x = 10)` 而非 `x = x \|\| 10` |
+| rest 参数代替 `arguments` | `(...args) => {}` 而非 `arguments[0]`      |
+| spread 代替 `apply`       | `fn(...args)` 而非 `fn.apply(null, args)`  |
 
 ### 分类 7：对象与数组（MEDIUM）
 
-| 规则 | 说明 |
-| - | - |
-| 数组字面量 `[]` 代替 `new Array()` | `const arr = []` |
-| 解构取多个属性 | `const { a, b } = obj` |
-| 禁止混杂引号键 | 全用引号或全不用，不混搭 |
-| 对象字面量 `{}` 代替 `new Object()` | `const obj = {}` |
-| spread 代替 concat/slice | `[...arr1, ...arr2]`、`[...arr].slice(1)` |
-| 多行字面量尾逗号 | `{ a: 1, b: 2, }` |
+| 规则                                | 说明                                      |
+| ----------------------------------- | ----------------------------------------- |
+| 数组字面量 `[]` 代替 `new Array()`  | `const arr = []`                          |
+| 解构取多个属性                      | `const { a, b } = obj`                    |
+| 禁止混杂引号键                      | 全用引号或全不用，不混搭                  |
+| 对象字面量 `{}` 代替 `new Object()` | `const obj = {}`                          |
+| spread 代替 concat/slice            | `[...arr1, ...arr2]`、`[...arr].slice(1)` |
+| 多行字面量尾逗号                    | `{ a: 1, b: 2, }`                         |
 
 ### 分类 8：格式与风格（LOW）
 
-| 规则 | 说明 |
-| - | - |
-| 控制结构必须用大括号 | `if (x) { return x; }` |
-| 行宽限制 80 字符 | 超长行合理换行 |
-| 每行一条语句 | 不用 `if (x) return x;` 单行 |
-| 字符串用单引号 | `'hello'` 而非 `"hello"` |
-| 两空格缩进 | 不用 Tab |
+| 规则                 | 说明                         |
+| -------------------- | ---------------------------- |
+| 控制结构必须用大括号 | `if (x) { return x; }`       |
+| 行宽限制 80 字符     | 超长行合理换行               |
+| 每行一条语句         | 不用 `if (x) return x;` 单行 |
+| 字符串用单引号       | `'hello'` 而非 `"hello"`     |
+| 两空格缩进           | 不用 Tab                     |
 
 ---
 
 ## 常见生产坑
 
-| 场景 | 风险 | 处理方式 |
-| - | - | - |
-| `array.forEach(async fn)` | 异步回调不等待，静默吞错 | 用 `for-of` + `await` 或 `Promise.all(array.map(async fn))` |
-| 忘记清理 Observer 监听器 | 单页应用中内存泄漏 | EventEmitter 的 `on()` 返回取消订阅函数，组件卸载时调用 |
-| 大数组链式操作 | `filter().map().reduce()` 多次遍历 | 合并为 `reduce` 单次遍历，或使用 transducer |
-| `JSON.parse(await res.text())` | 大 JSON 阻塞事件循环 | 流式解析或分块处理 |
-| 循环中创建闭包引用 `var i` | 闭包捕获同一变量引用 | 使用 `let` 或 `for-of` |
-| `Promise.all` 无超时 | 一个 Promise 卡住全部挂起 | 用 `Promise.race([promise, timeout])` 包装 |
-| `new Date(string)` 跨浏览器不一致 | ISO 格式在 Safari 可能报 `Invalid Date` | 统一用 `new Date(year, month-1, day)` 或 `date-fns` |
-| `typeof null === 'object'` | 误判 null 为对象 | 先 `value === null` 再 `typeof value === 'object'` |
+| 场景                              | 风险                                    | 处理方式                                                    |
+| --------------------------------- | --------------------------------------- | ----------------------------------------------------------- |
+| `array.forEach(async fn)`         | 异步回调不等待，静默吞错                | 用 `for-of` + `await` 或 `Promise.all(array.map(async fn))` |
+| 忘记清理 Observer 监听器          | 单页应用中内存泄漏                      | EventEmitter 的 `on()` 返回取消订阅函数，组件卸载时调用     |
+| 大数组链式操作                    | `filter().map().reduce()` 多次遍历      | 合并为 `reduce` 单次遍历，或使用 transducer                 |
+| `JSON.parse(await res.text())`    | 大 JSON 阻塞事件循环                    | 流式解析或分块处理                                          |
+| 循环中创建闭包引用 `var i`        | 闭包捕获同一变量引用                    | 使用 `let` 或 `for-of`                                      |
+| `Promise.all` 无超时              | 一个 Promise 卡住全部挂起               | 用 `Promise.race([promise, timeout])` 包装                  |
+| `new Date(string)` 跨浏览器不一致 | ISO 格式在 Safari 可能报 `Invalid Date` | 统一用 `new Date(year, month-1, day)` 或 `date-fns`         |
+| `typeof null === 'object'`        | 误判 null 为对象                        | 先 `value === null` 再 `typeof value === 'object'`          |
 
 ---
 

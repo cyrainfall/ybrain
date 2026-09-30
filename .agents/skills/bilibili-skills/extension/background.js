@@ -21,20 +21,20 @@
  * 但本文件里的命令不会进入 iframe。真遇到时按 CLAUDE.md 的"iframe"一节处理。
  */
 
-const BRIDGE_URL = "ws://localhost:9335";
-const BILIBILI_URLS = ["https://member.bilibili.com/*", "https://*.bilibili.com/*"];
-const CREATOR_HOME = "https://member.bilibili.com/platform/home";
+const BRIDGE_URL = "ws://localhost:9335"
+const BILIBILI_URLS = ["https://member.bilibili.com/*", "https://*.bilibili.com/*"]
+const CREATOR_HOME = "https://member.bilibili.com/platform/home"
 
-let ws = null;
+let ws = null
 
 // 有开放 WebSocket 时 service worker 不会被回收，alarm 仅作保底。
-chrome.alarms.create("keepAlive", { periodInMinutes: 0.4 });
+chrome.alarms.create("keepAlive", { periodInMinutes: 0.4 })
 chrome.alarms.onAlarm.addListener(() => {
-  if (!ws || ws.readyState !== WebSocket.OPEN) connect();
-});
+  if (!ws || ws.readyState !== WebSocket.OPEN) connect()
+})
 
 function setStatus(connected) {
-  chrome.storage.session.set({ wsConnected: connected }).catch(() => {});
+  chrome.storage.session.set({ wsConnected: connected }).catch(() => {})
 }
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
@@ -42,82 +42,82 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     sendResponse({
       success: true,
       status: { wsConnected: ws !== null && ws.readyState === WebSocket.OPEN },
-    });
-    return true;
+    })
+    return true
   }
-  return false;
-});
+  return false
+})
 
 // ───────────────────────── WebSocket ─────────────────────────
 
 function connect() {
-  if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) return;
+  if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) return
 
-  ws = new WebSocket(BRIDGE_URL);
+  ws = new WebSocket(BRIDGE_URL)
 
   ws.onopen = () => {
-    console.log("[Bilibili Bridge] 已连接到 bridge server");
-    ws.send(JSON.stringify({ role: "extension" }));
-    setStatus(true);
-  };
+    console.log("[Bilibili Bridge] 已连接到 bridge server")
+    ws.send(JSON.stringify({ role: "extension" }))
+    setStatus(true)
+  }
 
   ws.onmessage = async (event) => {
-    let msg;
+    let msg
     try {
-      msg = JSON.parse(event.data);
+      msg = JSON.parse(event.data)
     } catch {
-      return;
+      return
     }
     try {
-      const result = await handleCommand(msg);
-      ws.send(JSON.stringify({ id: msg.id, result: result ?? null }));
+      const result = await handleCommand(msg)
+      ws.send(JSON.stringify({ id: msg.id, result: result ?? null }))
     } catch (err) {
-      ws.send(JSON.stringify({ id: msg.id, error: String(err.message || err) }));
+      ws.send(JSON.stringify({ id: msg.id, error: String(err.message || err) }))
     }
-  };
+  }
 
   ws.onclose = () => {
-    console.log("[Bilibili Bridge] 连接断开，3s 后重连...");
-    setStatus(false);
-    setTimeout(connect, 3000);
-  };
+    console.log("[Bilibili Bridge] 连接断开，3s 后重连...")
+    setStatus(false)
+    setTimeout(connect, 3000)
+  }
 
-  ws.onerror = (e) => console.error("[Bilibili Bridge] WS 错误", e);
+  ws.onerror = (e) => console.error("[Bilibili Bridge] WS 错误", e)
 }
 
 // ───────────────────────── 命令路由 ─────────────────────────
 
 async function handleCommand(msg) {
-  const { method, params = {} } = msg;
+  const { method, params = {} } = msg
 
   switch (method) {
     case "navigate":
-      return await cmdNavigate(params);
+      return await cmdNavigate(params)
     case "wait_for_load":
-      return await cmdWaitForLoad(params);
+      return await cmdWaitForLoad(params)
 
     case "screenshot_element":
-      return await cmdScreenshotElement(params);
+      return await cmdScreenshotElement(params)
 
     case "set_file_input":
-      return await cmdSetFileInputViaDebugger(params);
+      return await cmdSetFileInputViaDebugger(params)
 
     case "click_element":
     case "click_nth_element":
     case "click_element_by_text":
-      return await cmdClickViaDebugger(method, params);
+      return await cmdClickViaDebugger(method, params)
 
     case "press_key":
-      return await cmdPressKeyViaDebugger(params);
+      return await cmdPressKeyViaDebugger(params)
 
     case "type_text":
-      return await cmdTypeTextViaDebugger(params);
+      return await cmdTypeTextViaDebugger(params)
 
     case "get_cookies":
-      return await cmdGetCookies(params);
+      return await cmdGetCookies(params)
 
     case "get_page_info":
-      return await cmdGetPageInfo();
+      return await cmdGetPageInfo()
 
     case "evaluate":
     case "wait_dom_stable":
@@ -131,29 +131,29 @@ async function handleCommand(msg) {
     case "get_iframes":
     case "get_scroll_top":
     case "get_viewport_height":
-      return await cmdEvaluateInMainWorld(method, params);
+      return await cmdEvaluateInMainWorld(method, params)
 
     // 其余方法都落到 domExecutor（见 cmdDomInMainWorld）。
     // ⚠️ 新增 MAIN world 方法时，必须在上面的 case 列表里也加一行；否则它会掉进
     //    下面这个 default，被 domExecutor 报成「未知 DOM 命令」—— 而"方法名在
     //    文件里出现过"这种粗检查是查不出来的，得看它是否真的被路由到。
     default:
-      return await cmdDomInMainWorld(method, params);
+      return await cmdDomInMainWorld(method, params)
   }
 }
 
 // ───────────────────────── Tab 管理 ─────────────────────────
 
 async function getOrOpenBilibiliTab() {
-  const tabs = await chrome.tabs.query({ url: BILIBILI_URLS });
+  const tabs = await chrome.tabs.query({ url: BILIBILI_URLS })
   if (tabs.length > 0) {
     // 优先复用创作中心标签页，其次任意 B站标签页 —— 否则会影响用户正在看的视频页
-    const creatorTab = tabs.find((t) => (t.url || "").includes("member.bilibili.com"));
-    return creatorTab || tabs[0];
+    const creatorTab = tabs.find((t) => (t.url || "").includes("member.bilibili.com"))
+    return creatorTab || tabs[0]
   }
-  const tab = await chrome.tabs.create({ url: CREATOR_HOME });
-  await waitForTabComplete(tab.id, 30000);
-  return tab;
+  const tab = await chrome.tabs.create({ url: CREATOR_HOME })
+  await waitForTabComplete(tab.id, 30000)
+  return tab
 }
 
 // 从未观察到 "loading" 时的宽限期。
@@ -166,7 +166,7 @@ async function getOrOpenBilibiliTab() {
 //
 // 宽限期这么短是安全的：真正的导航会在几十到几百毫秒内把状态变成 "loading"，
 // 一旦看到 loading，计时就从那一刻重新开始算。
-const LOAD_NOT_STARTED_GRACE_MS = 2500;
+const LOAD_NOT_STARTED_GRACE_MS = 2500
 
 /**
  * 等到标签页真正加载完。
@@ -185,96 +185,96 @@ const LOAD_NOT_STARTED_GRACE_MS = 2500;
  */
 async function waitForTabComplete(tabId, timeout) {
   return new Promise((resolve, reject) => {
-    const deadline = Date.now() + timeout;
-    let sawLoading = false;
-    let completeSince = null;
+    const deadline = Date.now() + timeout
+    let sawLoading = false
+    let completeSince = null
 
     function stop() {
-      chrome.tabs.onUpdated.removeListener(onUpdated);
+      chrome.tabs.onUpdated.removeListener(onUpdated)
     }
     function onUpdated(id, info) {
-      if (id !== tabId) return;
+      if (id !== tabId) return
       if (info.status === "loading") {
-        sawLoading = true;
-        completeSince = null;
+        sawLoading = true
+        completeSince = null
       } else if (info.status === "complete" && sawLoading) {
-        stop();
-        resolve();
+        stop()
+        resolve()
       }
     }
 
-    chrome.tabs.onUpdated.addListener(onUpdated);
+    chrome.tabs.onUpdated.addListener(onUpdated)
 
     const poll = async () => {
-      const tab = await chrome.tabs.get(tabId).catch(() => null);
+      const tab = await chrome.tabs.get(tabId).catch(() => null)
       if (!tab) {
-        stop();
-        reject(new Error("标签页已关闭"));
-        return;
+        stop()
+        reject(new Error("标签页已关闭"))
+        return
       }
 
       if (tab.status === "loading") {
-        sawLoading = true;
-        completeSince = null;
+        sawLoading = true
+        completeSince = null
       } else if (tab.status === "complete") {
         if (sawLoading) {
-          stop();
-          resolve();
-          return;
+          stop()
+          resolve()
+          return
         }
-        completeSince = completeSince ?? Date.now();
+        completeSince = completeSince ?? Date.now()
         if (Date.now() - completeSince >= LOAD_NOT_STARTED_GRACE_MS) {
           // 一直都 complete、也没见过 loading：这次导航要么早就结束了，
           // 要么压根没发生。放行，不要再耗满超时。
-          stop();
-          resolve();
-          return;
+          stop()
+          resolve()
+          return
         }
       }
 
       if (Date.now() > deadline) {
-        stop();
-        if (tab.status === "complete") resolve();
-        else reject(new Error("页面加载超时"));
-        return;
+        stop()
+        if (tab.status === "complete") resolve()
+        else reject(new Error("页面加载超时"))
+        return
       }
-      setTimeout(poll, 300);
-    };
-    setTimeout(poll, 300);
-  });
+      setTimeout(poll, 300)
+    }
+    setTimeout(poll, 300)
+  })
 }
 
 // ───────────────────────── 导航 ─────────────────────────
 
 async function cmdNavigate({ url }) {
-  const tab = await getOrOpenBilibiliTab();
+  const tab = await getOrOpenBilibiliTab()
 
   // 目标与当前 URL 相同时必须显式 reload。
   // 给 location.href 赋一个相同的值，Chrome 有时会当成 no-op —— 那样页面还是旧的
   // 状态（带着上一次上传的视频、已填的文案），脚本却以为"已经在新页面上了"。
-  const sameUrl = (tab.url || "").split("#")[0] === url.split("#")[0];
+  const sameUrl = (tab.url || "").split("#")[0] === url.split("#")[0]
 
   // 已在 bilibili.com 时用页面内 location 跳转，保持 same-origin 导航特征，
   // 与真实用户点击站内链接的行为一致。
-  const isOnBilibili = tab.url && tab.url.includes("bilibili.com");
+  const isOnBilibili = tab.url && tab.url.includes("bilibili.com")
   if (sameUrl) {
-    await chrome.tabs.reload(tab.id);
+    await chrome.tabs.reload(tab.id)
   } else if (isOnBilibili) {
     await chrome.scripting
       .executeScript({
         target: { tabId: tab.id },
         world: "MAIN",
         func: (targetUrl) => {
-          window.location.href = targetUrl;
+          window.location.href = targetUrl
         },
         args: [url],
       })
-      .catch(() => {});
+      .catch(() => {})
   } else {
-    await chrome.tabs.update(tab.id, { url });
+    await chrome.tabs.update(tab.id, { url })
   }
 
-  await waitForTabComplete(tab.id, 60000);
+  await waitForTabComplete(tab.id, 60000)
 
   // 后台标签页会被暂停渲染，覆盖 visibilityState 让页面始终认为自己在前台。
   await chrome.scripting
@@ -286,36 +286,36 @@ async function cmdNavigate({ url }) {
           Object.defineProperty(document, "visibilityState", {
             get: () => "visible",
             configurable: true,
-          });
-          Object.defineProperty(document, "hidden", { get: () => false, configurable: true });
-          document.dispatchEvent(new Event("visibilitychange"));
+          })
+          Object.defineProperty(document, "hidden", { get: () => false, configurable: true })
+          document.dispatchEvent(new Event("visibilitychange"))
         } catch (_) {}
       },
     })
-    .catch(() => {});
+    .catch(() => {})
 
-  return null;
+  return null
 }
 
 async function cmdWaitForLoad({ timeout = 60000 }) {
-  const tab = await getOrOpenBilibiliTab();
-  await waitForTabComplete(tab.id, timeout);
-  return null;
+  const tab = await getOrOpenBilibiliTab()
+  await waitForTabComplete(tab.id, timeout)
+  return null
 }
 
 async function cmdGetPageInfo() {
-  const tab = await getOrOpenBilibiliTab();
-  return { url: tab.url || "", title: tab.title || "", tabId: tab.id };
+  const tab = await getOrOpenBilibiliTab()
+  return { url: tab.url || "", title: tab.title || "", tabId: tab.id }
 }
 
 // ───────────────────────── 截图 ─────────────────────────
 
 async function cmdScreenshotElement({ selector, padding = 0 }) {
-  const tab = await getOrOpenBilibiliTab();
-  const target = { tabId: tab.id };
+  const tab = await getOrOpenBilibiliTab()
+  const target = { tabId: tab.id }
 
-  await chrome.debugger.detach(target).catch(() => {});
-  await chrome.debugger.attach(target, "1.3");
+  await chrome.debugger.detach(target).catch(() => {})
+  await chrome.debugger.attach(target, "1.3")
   try {
     const boxOut = await chrome.debugger.sendCommand(target, "Runtime.evaluate", {
       expression: `(() => {
@@ -331,9 +331,9 @@ async function cmdScreenshotElement({ selector, padding = 0 }) {
         };
       })()`,
       returnByValue: true,
-    });
-    const box = boxOut?.result?.value;
-    if (!box || box.width <= 0 || box.height <= 0) return { data: "" };
+    })
+    const box = boxOut?.result?.value
+    if (!box || box.width <= 0 || box.height <= 0) return { data: "" }
 
     const shot = await chrome.debugger.sendCommand(target, "Page.captureScreenshot", {
       format: "png",
@@ -344,32 +344,32 @@ async function cmdScreenshotElement({ selector, padding = 0 }) {
         height: box.height + padding * 2,
         scale: 1.0,
       },
-    });
-    return { data: shot.data || "" };
+    })
+    return { data: shot.data || "" }
   } finally {
-    await chrome.debugger.detach(target).catch(() => {});
+    await chrome.debugger.detach(target).catch(() => {})
   }
 }
 
 // ───────────────────────── Cookies ─────────────────────────
 
 async function cmdGetCookies({ domain = "bilibili.com" }) {
-  return await chrome.cookies.getAll({ domain });
+  return await chrome.cookies.getAll({ domain })
 }
 
 // ───────────────────────── MAIN world JS 执行 ─────────────────────────
 
 async function cmdEvaluateInMainWorld(method, params) {
-  const tab = await getOrOpenBilibiliTab();
+  const tab = await getOrOpenBilibiliTab()
   const results = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     world: "MAIN",
     func: mainWorldExecutor,
     args: [method, params],
-  });
-  const r = results?.[0]?.result;
-  if (r && typeof r === "object" && "__bl_error" in r) throw new Error(r.__bl_error);
-  return r;
+  })
+  const r = results?.[0]?.result
+  if (r && typeof r === "object" && "__bl_error" in r) throw new Error(r.__bl_error)
+  return r
 }
 
 /**
@@ -379,109 +379,109 @@ async function cmdEvaluateInMainWorld(method, params) {
 function mainWorldExecutor(method, params) {
   function poll(check, interval, timeout) {
     return new Promise((resolve, reject) => {
-      const start = Date.now();
-      (function tick() {
-        const result = check();
+      const start = Date.now()
+      ;(function tick() {
+        const result = check()
         if (result !== false && result !== null && result !== undefined) {
-          resolve(result);
-          return;
+          resolve(result)
+          return
         }
         if (Date.now() - start >= timeout) {
-          reject(new Error("超时"));
-          return;
+          reject(new Error("超时"))
+          return
         }
-        setTimeout(tick, interval);
-      })();
-    });
+        setTimeout(tick, interval)
+      })()
+    })
   }
 
   switch (method) {
     case "evaluate": {
       try {
         // eslint-disable-next-line no-new-func
-        return Function(`"use strict"; return (${params.expression})`)();
+        return Function(`"use strict"; return (${params.expression})`)()
       } catch (e) {
-        return { __bl_error: `JS执行错误: ${e.message}` };
+        return { __bl_error: `JS执行错误: ${e.message}` }
       }
     }
 
     case "has_element":
-      return document.querySelector(params.selector) !== null;
+      return document.querySelector(params.selector) !== null
 
     case "get_elements_count":
-      return document.querySelectorAll(params.selector).length;
+      return document.querySelectorAll(params.selector).length
 
     case "get_element_text": {
-      const el = document.querySelector(params.selector);
-      return el ? el.textContent.trim() : null;
+      const el = document.querySelector(params.selector)
+      return el ? el.textContent.trim() : null
     }
 
     case "get_element_attribute": {
-      const el = document.querySelector(params.selector);
-      return el ? el.getAttribute(params.attr) : null;
+      const el = document.querySelector(params.selector)
+      return el ? el.getAttribute(params.attr) : null
     }
 
     case "get_elements_info": {
       return Array.from(document.querySelectorAll(params.selector)).map((el) => {
-        const info = { text: (el.textContent || "").trim().slice(0, 120) };
-        if (params.attrs) for (const a of params.attrs) info[a] = el.getAttribute(a);
-        return info;
-      });
+        const info = { text: (el.textContent || "").trim().slice(0, 120) }
+        if (params.attrs) for (const a of params.attrs) info[a] = el.getAttribute(a)
+        return info
+      })
     }
 
     case "get_url":
-      return window.location.href;
+      return window.location.href
 
     case "get_scroll_top":
-      return window.pageYOffset || document.documentElement.scrollTop || 0;
+      return window.pageYOffset || document.documentElement.scrollTop || 0
 
     case "get_viewport_height":
-      return window.innerHeight;
+      return window.innerHeight
 
     case "get_iframes": {
       // 只报告，不进入 —— 见文件头"已知限制"。
       return Array.from(document.querySelectorAll("iframe")).map((f) => {
-        const r = f.getBoundingClientRect();
+        const r = f.getBoundingClientRect()
         return {
           name: f.getAttribute("name") || "",
           src: f.getAttribute("src") || "",
           width: Math.round(r.width),
           height: Math.round(r.height),
-        };
-      });
+        }
+      })
     }
 
     case "wait_dom_stable": {
-      const timeout = params.timeout || 10000;
-      const interval = params.interval || 500;
+      const timeout = params.timeout || 10000
+      const interval = params.interval || 500
       return new Promise((resolve) => {
-        let last = -1;
-        const start = Date.now();
-        (function tick() {
-          const size = document.body ? document.body.innerHTML.length : 0;
+        let last = -1
+        const start = Date.now()
+        ;(function tick() {
+          const size = document.body ? document.body.innerHTML.length : 0
           if (size === last && size > 0) {
-            resolve(null);
-            return;
+            resolve(null)
+            return
           }
-          last = size;
+          last = size
           if (Date.now() - start >= timeout) {
-            resolve(null);
-            return;
+            resolve(null)
+            return
           }
-          setTimeout(tick, interval);
-        })();
-      });
+          setTimeout(tick, interval)
+        })()
+      })
     }
 
     case "wait_for_selector": {
-      const timeout = params.timeout || 30000;
+      const timeout = params.timeout || 30000
       return poll(() => !!document.querySelector(params.selector), 200, timeout).catch(() => {
-        throw new Error(`等待元素超时: ${params.selector}`);
-      });
+        throw new Error(`等待元素超时: ${params.selector}`)
+      })
     }
 
     default:
-      return { __bl_error: `未知 MAIN world 方法: ${method}` };
+      return { __bl_error: `未知 MAIN world 方法: ${method}` }
   }
 }
 
@@ -490,11 +490,11 @@ function mainWorldExecutor(method, params) {
 // 在视口坐标 (x, y) 派发真实鼠标事件序列：mouseMoved（轨迹）+ pressed + released。
 // 真事件走渲染层，能穿透 shadow DOM，且 isTrusted=true。
 async function _dispatchRealClickAt(target, x, y) {
-  const startX = x - 20;
-  const startY = y - 45;
-  const steps = 5;
+  const startX = x - 20
+  const startY = y - 45
+  const steps = 5
   for (let i = 1; i <= steps; i++) {
-    const t = i / steps;
+    const t = i / steps
     await chrome.debugger.sendCommand(target, "Input.dispatchMouseEvent", {
       type: "mouseMoved",
       x: Math.round(startX + (x - startX) * t),
@@ -502,40 +502,40 @@ async function _dispatchRealClickAt(target, x, y) {
       button: "none",
       buttons: 0,
       modifiers: 0,
-    });
-    await sleep(8);
+    })
+    await sleep(8)
   }
 
-  const base = { x, y, button: "left", buttons: 1, clickCount: 1, modifiers: 0 };
+  const base = { x, y, button: "left", buttons: 1, clickCount: 1, modifiers: 0 }
   await chrome.debugger.sendCommand(target, "Input.dispatchMouseEvent", {
     ...base,
     type: "mousePressed",
-  });
-  await sleep(30);
+  })
+  await sleep(30)
   await chrome.debugger.sendCommand(target, "Input.dispatchMouseEvent", {
     ...base,
     type: "mouseReleased",
     buttons: 0,
-  });
+  })
 }
 
 async function cmdClickViaDebugger(method, { selector, index, text }) {
-  const tab = await getOrOpenBilibiliTab();
-  const target = { tabId: tab.id };
+  const tab = await getOrOpenBilibiliTab()
+  const target = { tabId: tab.id }
 
-  let findExpr;
+  let findExpr
   if (method === "click_nth_element") {
-    findExpr = `document.querySelectorAll(${JSON.stringify(selector)})[${index}] || null`;
+    findExpr = `document.querySelectorAll(${JSON.stringify(selector)})[${index}] || null`
   } else if (method === "click_element_by_text") {
     findExpr =
       `Array.from(document.querySelectorAll(${JSON.stringify(selector)}))` +
-      `.find(e => (e.textContent || "").trim().includes(${JSON.stringify(text)})) || null`;
+      `.find(e => (e.textContent || "").trim().includes(${JSON.stringify(text)})) || null`
   } else {
-    findExpr = `document.querySelector(${JSON.stringify(selector)})`;
+    findExpr = `document.querySelector(${JSON.stringify(selector)})`
   }
 
-  await chrome.debugger.detach(target).catch(() => {});
-  await chrome.debugger.attach(target, "1.3");
+  await chrome.debugger.detach(target).catch(() => {})
+  await chrome.debugger.attach(target, "1.3")
   try {
     const evalResult = await chrome.debugger.sendCommand(target, "Runtime.evaluate", {
       expression: `(() => {
@@ -613,16 +613,16 @@ async function cmdClickViaDebugger(method, { selector, index, text }) {
         return { x: cx, y: cy, tag: t.tagName, disabled: !!t.disabled };
       })()`,
       returnByValue: true,
-    });
+    })
 
-    const pos = evalResult?.result?.value;
-    if (!pos) throw new Error(`元素不存在: ${JSON.stringify({ selector, index, text })}`);
+    const pos = evalResult?.result?.value
+    if (!pos) throw new Error(`元素不存在: ${JSON.stringify({ selector, index, text })}`)
     if (pos.blocked) {
       throw new Error(
         `目标元素被遮挡，已放弃点击（避免点到浮层上）：目标 ${pos.target}，` +
           `该坐标上实际是 ${pos.blocker}「${pos.blockerText}」。` +
           `请先关闭页面上打开的弹窗/浮层面板后重试。`,
-      );
+      )
     }
     if (pos.offscreen) {
       throw new Error(
@@ -630,16 +630,16 @@ async function cmdClickViaDebugger(method, { selector, index, text }) {
           `目标 ${pos.target}，坐标 (${pos.x}, ${pos.y})，视口 ${pos.viewport}` +
           `${pos.hitNull ? "，该点无可命中元素" : ""}。` +
           `通常是元素在一个没滚到位的可滚动容器里（长列表、弹窗面板），或还没渲染出来。`,
-      );
+      )
     }
     if (pos.x <= 0 && pos.y <= 0) {
-      throw new Error(`元素不可点击（坐标为 0，可能被隐藏或未渲染）: ${selector}`);
+      throw new Error(`元素不可点击（坐标为 0，可能被隐藏或未渲染）: ${selector}`)
     }
 
-    await _dispatchRealClickAt(target, pos.x, pos.y);
-    return { clicked: true, ...pos };
+    await _dispatchRealClickAt(target, pos.x, pos.y)
+    return { clicked: true, ...pos }
   } finally {
-    await chrome.debugger.detach(target).catch(() => {});
+    await chrome.debugger.detach(target).catch(() => {})
   }
 }
 
@@ -656,7 +656,7 @@ const KEY_MAP = {
   ArrowLeft: { key: "ArrowLeft", code: "ArrowLeft", windowsVirtualKeyCode: 37 },
   ArrowRight: { key: "ArrowRight", code: "ArrowRight", windowsVirtualKeyCode: 39 },
   Space: { key: " ", code: "Space", windowsVirtualKeyCode: 32, text: " " },
-};
+}
 
 /**
  * 按下并释放按键。统一走 CDP 真实键盘事件（isTrusted=true）。
@@ -666,36 +666,36 @@ const KEY_MAP = {
  * handler，标签会静静地留在输入框里没被创建。
  */
 async function cmdPressKeyViaDebugger({ key }) {
-  const tab = await getOrOpenBilibiliTab();
+  const tab = await getOrOpenBilibiliTab()
   const info = KEY_MAP[key] || {
     key,
     code: `Key${key.toUpperCase()}`,
     windowsVirtualKeyCode: key.charCodeAt(0),
-  };
-  const target = { tabId: tab.id };
-  await chrome.debugger.attach(target, "1.3");
-  try {
-    const base = { modifiers: 0, ...info };
-    await chrome.debugger.sendCommand(target, "Input.dispatchKeyEvent", { ...base, type: "keyDown" });
-    await sleep(30);
-    await chrome.debugger.sendCommand(target, "Input.dispatchKeyEvent", { ...base, type: "keyUp" });
-  } finally {
-    await chrome.debugger.detach(target).catch(() => {});
   }
-  return null;
+  const target = { tabId: tab.id }
+  await chrome.debugger.attach(target, "1.3")
+  try {
+    const base = { modifiers: 0, ...info }
+    await chrome.debugger.sendCommand(target, "Input.dispatchKeyEvent", { ...base, type: "keyDown" })
+    await sleep(30)
+    await chrome.debugger.sendCommand(target, "Input.dispatchKeyEvent", { ...base, type: "keyUp" })
+  } finally {
+    await chrome.debugger.detach(target).catch(() => {})
+  }
+  return null
 }
 
 // ─────── 真实文字输入（chrome.debugger + CDP Input.insertText） ───────
 
 async function cmdTypeTextViaDebugger({ text, delayMs = 50 }) {
-  const tab = await getOrOpenBilibiliTab();
+  const tab = await getOrOpenBilibiliTab()
 
   const ceResult = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     world: "MAIN",
     func: () => document.activeElement?.isContentEditable ?? false,
-  });
-  const inCE = ceResult?.[0]?.result;
+  })
+  const inCE = ceResult?.[0]?.result
 
   if (inCE) {
     await chrome.scripting.executeScript({
@@ -703,68 +703,68 @@ async function cmdTypeTextViaDebugger({ text, delayMs = 50 }) {
       world: "MAIN",
       func: async (chars, delay) => {
         function sleep(ms) {
-          return new Promise((r) => setTimeout(r, ms));
+          return new Promise((r) => setTimeout(r, ms))
         }
         for (const char of chars) {
-          document.execCommand("insertText", false, char);
-          await sleep(delay);
+          document.execCommand("insertText", false, char)
+          await sleep(delay)
         }
       },
       args: [[...text], delayMs],
-    });
-    return null;
+    })
+    return null
   }
 
-  const target = { tabId: tab.id };
-  await chrome.debugger.attach(target, "1.3");
+  const target = { tabId: tab.id }
+  await chrome.debugger.attach(target, "1.3")
   try {
     for (const char of text) {
-      await chrome.debugger.sendCommand(target, "Input.insertText", { text: char });
-      await sleep(delayMs);
+      await chrome.debugger.sendCommand(target, "Input.insertText", { text: char })
+      await sleep(delayMs)
     }
   } finally {
-    await chrome.debugger.detach(target).catch(() => {});
+    await chrome.debugger.detach(target).catch(() => {})
   }
-  return null;
+  return null
 }
 
 // ───────────────────────── 文件上传（chrome.debugger + CDP） ─────────
 
 async function cmdSetFileInputViaDebugger({ selector, files }) {
-  const tab = await getOrOpenBilibiliTab();
-  const target = { tabId: tab.id };
+  const tab = await getOrOpenBilibiliTab()
+  const target = { tabId: tab.id }
 
-  await chrome.debugger.attach(target, "1.3");
+  await chrome.debugger.attach(target, "1.3")
   try {
-    const { root } = await chrome.debugger.sendCommand(target, "DOM.getDocument", { depth: 0 });
+    const { root } = await chrome.debugger.sendCommand(target, "DOM.getDocument", { depth: 0 })
     const { nodeId } = await chrome.debugger.sendCommand(target, "DOM.querySelector", {
       nodeId: root.nodeId,
       selector,
-    });
-    if (!nodeId) throw new Error(`文件输入框不存在: ${selector}`);
+    })
+    if (!nodeId) throw new Error(`文件输入框不存在: ${selector}`)
     await chrome.debugger.sendCommand(target, "DOM.setFileInputFiles", {
       nodeId,
       files, // Python 侧传入的本地绝对路径数组
-    });
+    })
   } finally {
-    await chrome.debugger.detach(target).catch(() => {});
+    await chrome.debugger.detach(target).catch(() => {})
   }
-  return null;
+  return null
 }
 
 // ───────────────────────── DOM 操作（MAIN world） ────────────────────
 
 async function cmdDomInMainWorld(method, params) {
-  const tab = await getOrOpenBilibiliTab();
+  const tab = await getOrOpenBilibiliTab()
   const results = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
     world: "MAIN",
     func: domExecutor,
     args: [method, params],
-  });
-  const r = results?.[0]?.result;
-  if (r && typeof r === "object" && "__bl_error" in r) throw new Error(r.__bl_error);
-  return r ?? null;
+  })
+  const r = results?.[0]?.result
+  if (r && typeof r === "object" && "__bl_error" in r) throw new Error(r.__bl_error)
+  return r ?? null
 }
 
 /**
@@ -773,110 +773,109 @@ async function cmdDomInMainWorld(method, params) {
  */
 function domExecutor(method, params) {
   function sleep(ms) {
-    return new Promise((r) => setTimeout(r, ms));
+    return new Promise((r) => setTimeout(r, ms))
   }
 
   function requireEl(selector) {
-    const el = document.querySelector(selector);
-    if (!el) return { __bl_error: `元素不存在: ${selector}` };
-    return el;
+    const el = document.querySelector(selector)
+    if (!el) return { __bl_error: `元素不存在: ${selector}` }
+    return el
   }
 
   switch (method) {
     case "input_text": {
-      const el = requireEl(params.selector);
-      if (el.__bl_error) return el;
-      el.focus();
+      const el = requireEl(params.selector)
+      if (el.__bl_error) return el
+      el.focus()
       // Vue / React 受控组件需要走原生 setter，否则框架状态不会更新。
-      const proto =
-        el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
-      const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
-      if (setter) setter.call(el, params.text);
-      else el.value = params.text;
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-      return null;
+      const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
+      const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set
+      if (setter) setter.call(el, params.text)
+      else el.value = params.text
+      el.dispatchEvent(new Event("input", { bubbles: true }))
+      el.dispatchEvent(new Event("change", { bubbles: true }))
+      return null
     }
 
     case "input_content_editable": {
       return new Promise(async (resolve) => {
-        const el = document.querySelector(params.selector);
+        const el = document.querySelector(params.selector)
         if (!el) {
-          resolve({ __bl_error: `元素不存在: ${params.selector}` });
-          return;
+          resolve({ __bl_error: `元素不存在: ${params.selector}` })
+          return
         }
-        el.focus();
-        document.execCommand("selectAll", false, null);
-        document.execCommand("delete", false, null);
-        await sleep(80);
+        el.focus()
+        document.execCommand("selectAll", false, null)
+        document.execCommand("delete", false, null)
+        await sleep(80)
         // 分段写入，段之间用 insertParagraph 换行。
         // ⚠️ 不是所有富文本编辑器都支持程序化换行（抖音的编辑器就完全不支持）。
         //    调用方必须**回读校验**，见 publish_video 里的简介回读逻辑。
-        const lines = params.text.split("\n");
+        const lines = params.text.split("\n")
         for (let i = 0; i < lines.length; i++) {
-          if (lines[i]) document.execCommand("insertText", false, lines[i]);
+          if (lines[i]) document.execCommand("insertText", false, lines[i])
           if (i < lines.length - 1) {
-            document.execCommand("insertParagraph", false, null);
-            await sleep(30);
+            document.execCommand("insertParagraph", false, null)
+            await sleep(30)
           }
         }
-        resolve(null);
-      });
+        resolve(null)
+      })
     }
 
     case "scroll_by":
-      window.scrollBy(params.x || 0, params.y || 0);
-      return null;
+      window.scrollBy(params.x || 0, params.y || 0)
+      return null
     case "scroll_to":
-      window.scrollTo(params.x || 0, params.y || 0);
-      return null;
+      window.scrollTo(params.x || 0, params.y || 0)
+      return null
     case "scroll_to_bottom":
-      window.scrollTo(0, document.body.scrollHeight);
-      return null;
+      window.scrollTo(0, document.body.scrollHeight)
+      return null
 
     case "scroll_element_into_view": {
-      const el = document.querySelector(params.selector);
-      if (el) el.scrollIntoView({ behavior: "instant", block: "center" });
-      return null;
+      const el = document.querySelector(params.selector)
+      if (el) el.scrollIntoView({ behavior: "instant", block: "center" })
+      return null
     }
 
     case "remove_element": {
-      const el = document.querySelector(params.selector);
-      if (el) el.remove();
-      return null;
+      const el = document.querySelector(params.selector)
+      if (el) el.remove()
+      return null
     }
 
     case "hover_element": {
-      const el = document.querySelector(params.selector);
+      const el = document.querySelector(params.selector)
       if (el) {
-        const rect = el.getBoundingClientRect();
-        const x = rect.left + rect.width / 2;
-        const y = rect.top + rect.height / 2;
-        el.dispatchEvent(new MouseEvent("mouseover", { clientX: x, clientY: y, bubbles: true }));
-        el.dispatchEvent(new MouseEvent("mousemove", { clientX: x, clientY: y, bubbles: true }));
+        const rect = el.getBoundingClientRect()
+        const x = rect.left + rect.width / 2
+        const y = rect.top + rect.height / 2
+        el.dispatchEvent(new MouseEvent("mouseover", { clientX: x, clientY: y, bubbles: true }))
+        el.dispatchEvent(new MouseEvent("mousemove", { clientX: x, clientY: y, bubbles: true }))
       }
-      return null;
+      return null
     }
 
     case "select_all_text": {
-      const el = document.querySelector(params.selector);
+      const el = document.querySelector(params.selector)
       if (el) {
-        el.focus();
-        if (el.select) el.select();
-        else document.execCommand("selectAll");
+        el.focus()
+        if (el.select) el.select()
+        else document.execCommand("selectAll")
       }
-      return null;
+      return null
     }
 
     default:
-      return { __bl_error: `未知 DOM 命令: ${method}` };
+      return { __bl_error: `未知 DOM 命令: ${method}` }
   }
 }
 
 function sleep(ms) {
-  return new Promise((r) => setTimeout(r, ms));
+  return new Promise((r) => setTimeout(r, ms))
 }
 
 // ───────────────────────── 启动 ─────────────────────────
 
-connect();
+connect()

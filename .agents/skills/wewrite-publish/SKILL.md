@@ -66,9 +66,9 @@ wewrite run step publish completed
 
 ## 辅助功能
 
-| 用户说 | 动作 |
-|---|---|
-| 看主题 | `wewrite gallery` |
-| 换主题 | 重新 preview；只有再次明确要求才重新 publish |
+| 用户说   | 动作                                                  |
+| -------- | ----------------------------------------------------- |
+| 看主题   | `wewrite gallery`                                     |
+| 换主题   | 重新 preview；只有再次明确要求才重新 publish          |
 | 做图片帖 | 先确认用户确实要推草稿箱，再执行 `wewrite image-post` |
-| 只排版 | 只 preview |
+| 只排版   | 只 preview                                            |
