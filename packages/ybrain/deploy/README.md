@@ -250,7 +250,7 @@ ENTRYPOINT ["/usr/local/bin/ybrain-entrypoint"]
 
 **为什么需要预热（票据 29）**：`opencode serve` 按请求加载项目实例（上游启动优化，`serve` 命令写死 `instance: false`），插件——包含捕获接口 8787——只在实例引导时才加载。没有预热时，每次 `docker compose up -d` 重建容器后，浏览器扩展与安卓快捷方式都推送不到，直到有人打开 Web 界面或调一次 4096 的接口。
 
-预热进程做的事：等 4096 就绪后，带基本认证（用户名 `opencode`，密码取 `OPENCODE_SERVER_PASSWORD`）打一次 `GET /session`，触发实例引导，8787 随即在听。成功打 `ybrain warmup: instance bootstrapped`；60 秒内没成功只告警一次，不阻塞服务启动。
+预热进程做的事：等 4096 就绪后，带基本认证（用户名 `opencode`，密码取 `OPENCODE_SERVER_PASSWORD`）打一次 `GET /session`，触发实例引导，8787 随即在听。成功打 `ybrain warmup: instance bootstrapped`；每次请求带 30 秒上限（冷启动引导实测约 22 秒，超时放下一轮重试，避免挂死请求把整个预热循环卡死）；重试预算耗尽只告警一次，不阻塞服务启动。
 
 排查时可对照：`docker logs ybrain` 里出现该行，说明预热到位；若只见 `opencode server listening` 而无该行，说明预热没成功，此时 `8787`（`/proc/net/tcp6`，绑在 IPv6）不会在听。
 

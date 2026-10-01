@@ -18,10 +18,13 @@ MAX_TRIES=60
 # 不需要认证、会忽略该凭据，所以可以无条件带上，省去分支与 sh 里的参数拆分问题。
 # --noproxy "*"：请求只走回环，若环境里混进 http_proxy，curl 会把它转给代理并拿到 502，
 # 预热静默超时——表现与本脚本要修的问题一模一样，难以察觉，索性绕开代理。
+# --max-time 30：实例引导可能耗时二十多秒（冷启动拉模型目录，实测一次 21.7s），设得比
+# 观测值宽，避免客户端先断连而打断引导；但不能无限等——一个真正挂死的请求会让循环永远
+# 卡在同一次，容器重启后捕获渠道直接残废（票据 26 实测）。超时就放下一轮重试。
 (
   i=0
   while [ "$i" -lt "$MAX_TRIES" ]; do
-    if curl -fsS --noproxy "*" -u "opencode:${OPENCODE_SERVER_PASSWORD:-}" "http://127.0.0.1:${PORT}/session" >/dev/null 2>&1; then
+    if curl -fsS --noproxy "*" --max-time 30 -u "opencode:${OPENCODE_SERVER_PASSWORD:-}" "http://127.0.0.1:${PORT}/session" >/dev/null 2>&1; then
       echo "ybrain warmup: instance bootstrapped"
       exit 0
     fi
