@@ -46,5 +46,10 @@ COPY opencode.json /opt/ybrain/opencode.json
 # 提炼规则不在这里——票据 24 起由插件内的 ybrain-distiller 代理指令全权负责。
 COPY AGENTS.md /opt/ybrain/AGENTS.md
 
+# 票据 29：入口包装脚本。opencode serve 懒引导实例，插件（含捕获接口 8787）要等第一个
+# 实例请求才加载；脚本在起服务前预热一次，使容器重建后无需人工操作即可捕获。
+COPY entrypoint.sh /usr/local/bin/ybrain-entrypoint
+RUN chmod +x /usr/local/bin/ybrain-entrypoint
+
 WORKDIR /opt/ybrain
-ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
+ENTRYPOINT ["/usr/local/bin/ybrain-entrypoint"]

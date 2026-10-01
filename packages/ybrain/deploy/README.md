@@ -219,9 +219,13 @@ RUN opencode --version
 
 COPY context/plugin /opt/ybrain/plugin
 COPY opencode.json /opt/ybrain/opencode.json
+COPY AGENTS.md /opt/ybrain/AGENTS.md
+
+COPY entrypoint.sh /usr/local/bin/ybrain-entrypoint
+RUN chmod +x /usr/local/bin/ybrain-entrypoint
 
 WORKDIR /opt/ybrain
-ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
+ENTRYPOINT ["/usr/local/bin/ybrain-entrypoint"]
 ```
 
 构建上下文（由 CI 组装到 `packages/ybrain/deploy/context/`）：
@@ -229,6 +233,7 @@ ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
 - `context/opencode` — opencode 单文件二进制
 - `context/plugin/ybrain.js` — 打包后的 ybrain 插件
 - `opencode.json` — opencode 配置（指定加载哪个插件）
+- `entrypoint.sh` — 入口包装脚本（票据 29，见下）
 
 镜像内最终结构：
 
@@ -241,7 +246,13 @@ ENTRYPOINT ["opencode", "serve", "--port=4096", "--hostname=0.0.0.0"]
     └── vec0.so            # sqlite-vec 可加载扩展
 ```
 
-容器启动命令：`opencode serve --port=4096 --hostname=0.0.0.0`。
+容器启动命令由 `ybrain-entrypoint` 包装：脚本先执行 `opencode serve --port=4096 --hostname=0.0.0.0`（`exec`，SIGTERM 直达 opencode），同时后台起一个预热进程。
+
+**为什么需要预热（票据 29）**：`opencode serve` 按请求加载项目实例（上游启动优化，`serve` 命令写死 `instance: false`），插件——包含捕获接口 8787——只在实例引导时才加载。没有预热时，每次 `docker compose up -d` 重建容器后，浏览器扩展与安卓快捷方式都推送不到，直到有人打开 Web 界面或调一次 4096 的接口。
+
+预热进程做的事：等 4096 就绪后，带基本认证（用户名 `opencode`，密码取 `OPENCODE_SERVER_PASSWORD`）打一次 `GET /session`，触发实例引导，8787 随即在听。成功打 `ybrain warmup: instance bootstrapped`；60 秒内没成功只告警一次，不阻塞服务启动。
+
+排查时可对照：`docker logs ybrain` 里出现该行，说明预热到位；若只见 `opencode server listening` 而无该行，说明预热没成功，此时 `8787`（`/proc/net/tcp6`，绑在 IPv6）不会在听。
 
 `opencode.json` 内容：
 
