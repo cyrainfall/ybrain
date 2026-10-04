@@ -49,24 +49,24 @@ node "$SKILL_DIR/scripts/note-images.cjs" --note-id <id> --file content.md [--dr
 
 ### MediaType 枚举与大小限制
 
-| 值 | 类型 | 值 | 类型 |
-|----|------|----|------|
-| 1 | PDF | 11 | 笔记 |
-| 2 | 网页 | 12 | AI 会话 |
-| 3 | Word | 13 | TXT |
-| 4 | PPT | 14 | Xmind |
-| 5 | Excel | 15 | 录音 |
-| 6 | 公众号文章 | 16 | 网页视频（skill 不支持） |
-| 7 | Markdown | 20 | HTML |
-| 9 | 图片 | 21 | EPUB |
-| 99 | 文件夹 | | |
+| 值  | 类型       | 值  | 类型                     |
+| --- | ---------- | --- | ------------------------ |
+| 1   | PDF        | 11  | 笔记                     |
+| 2   | 网页       | 12  | AI 会话                  |
+| 3   | Word       | 13  | TXT                      |
+| 4   | PPT        | 14  | Xmind                    |
+| 5   | Excel      | 15  | 录音                     |
+| 6   | 公众号文章 | 16  | 网页视频（skill 不支持） |
+| 7   | Markdown   | 20  | HTML                     |
+| 9   | 图片       | 21  | EPUB                     |
+| 99  | 文件夹     |     |                          |
 
-| 文件类型 | 最大大小 |
-| --- | --- |
-| Excel、TXT、Xmind、Markdown、HTML | 10 MB |
-| 图片 | 30 MB |
-| EPUB | 50 MB |
-| PDF、Word、PPT、音频及其他 | 200 MB |
+| 文件类型                          | 最大大小 |
+| --------------------------------- | -------- |
+| Excel、TXT、Xmind、Markdown、HTML | 10 MB    |
+| 图片                              | 30 MB    |
+| EPUB                              | 50 MB    |
+| PDF、Word、PPT、音频及其他        | 200 MB   |
 
 网页（2/6）、笔记（11）等非文件类型无大小限制；音频额外限制最长 2 小时。
 

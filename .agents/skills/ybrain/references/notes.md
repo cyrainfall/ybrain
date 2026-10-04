@@ -22,20 +22,22 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 ```
 
 所有响应的外层结构统一为：
+
 ```json
 {"code": 0, "msg": "success", "data": { ... }}
 ```
+
 通过 `code` 字段判断是否成功：`code=0` 为成功，非零为错误码（常见错误码见下方约束速记，完整错误码表见 `notes-api.md`）。
 
 ## 关键概念
 
 在调用任何接口之前，需要理解三个核心概念——它们贯穿所有接口：
 
-| 概念 | 说明 | 获取方式 |
-|------|------|----------|
-| `note_id` | 笔记唯一 ID，所有针对单篇笔记的操作都需要它 | `search_note` 或 `list_note` 返回（详见各接口的返回说明） |
-| `folder_id` | 笔记本 ID，不传时默认查全部笔记 | `list_notebook` 返回（取 `folder_type=0` 即用户自建的条目） |
-| `content_format` | 文本格式枚举 | **写入固定传 `1`**（Markdown，API 写入端只支持这一种） |
+| 概念             | 说明                                        | 获取方式                                                    |
+| ---------------- | ------------------------------------------- | ----------------------------------------------------------- |
+| `note_id`        | 笔记唯一 ID，所有针对单篇笔记的操作都需要它 | `search_note` 或 `list_note` 返回（详见各接口的返回说明）   |
+| `folder_id`      | 笔记本 ID，不传时默认查全部笔记             | `list_notebook` 返回（取 `folder_type=0` 即用户自建的条目） |
+| `content_format` | 文本格式枚举                                | **写入固定传 `1`**（Markdown，API 写入端只支持这一种）      |
 
 > 展示给用户时**只用标题来指代笔记**，不暴露 note_id / folder_id——这些是内部标识，用户不需要看到。
 
@@ -62,6 +64,7 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 **触发场景**：按标题定位笔记，获取 note_id 及笔记本归属信息。按正文内容搜索应优先使用 Search 工具，此处仅作 fallback。
 
 请求体结构：
+
 ```json
 {
   "search_type": "int, 必填, 0=标题检索, 1=正文检索",
@@ -75,6 +78,7 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 ```
 
 返回要点：
+
 - `data.search_note_infos[]` —— 结果列表，每条含 `note_book_info`（NoteBookInfo，含 `note_id`、`title`、`summary`、`note_ext_info.folder_id/folder_name`）和 `highlightInfo`（`doc_title` 含 `<em>` 高亮标签）
 - `data.is_end` —— bool，是否最后一页
 - `data.total_hit_num` —— 命中总数
@@ -86,6 +90,7 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 **触发场景**：用户说「最近的笔记」「看看xx笔记本里有什么」。没有指明笔记本时，`folder_id` 留空查全部。
 
 请求体结构：
+
 ```json
 {
   "folder_id": "string, 可选, 空字符串=全部笔记, 指定则只查该笔记本",
@@ -96,6 +101,7 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 ```
 
 返回要点：
+
 - `data.note_book_list[]` —— 笔记列表（NoteBookInfo，含 `note_id`、`title`、`summary`、`create_time`、`modify_time`、`note_ext_info.folder_id/folder_name`）
 - `data.is_end` —— bool，是否最后一页
 
@@ -106,6 +112,7 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 **触发场景**：导出笔记原文, 获取笔记的markdown格式, 获取笔记的json格式, 获取笔记的纯文本。也用于 Fetch 工具返回生成内容而非原文时的 fallback：先 export 获取原文再做后续处理。
 
 请求体结构：
+
 ```json
 {
   "note_id": "string, 必填, 目标笔记 ID",
@@ -126,6 +133,7 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 **触发场景**：用户说「新建笔记」「把这段内容保存为笔记」。
 
 请求体结构：
+
 ```json
 {
   "content_format": "int, 必填, 固定传 1 (Markdown)",
@@ -144,6 +152,7 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 **触发场景**：用户说「在这篇笔记末尾加点内容」「把XX添加到笔记里」。适合短内容直接追加；长内容应走 COS 上传 + `push_note`（传 note_id）路径。
 
 请求体结构：
+
 ```json
 {
   "note_id": "string, 必填, 目标笔记 ID",
@@ -166,6 +175,7 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 **触发场景**：作为 `update_note` 的前置步骤，获取笔记的块结构以定位要修改的内容。不单独使用。
 
 请求体结构：
+
 ```json
 {
   "note_id": "string, 必填, 目标笔记 ID"
@@ -173,6 +183,7 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 ```
 
 返回要点：
+
 - `data.blocks[]` —— 有序块列表，每条含：
   - `block_id`：块 ID（普通块为 UUID，列表整体为 `首ID..尾ID`，虚拟锚点为 `_begin_` / `_end_`）
   - `content`：块的 Markdown 文本（供定位用，虚拟块为空）
@@ -189,6 +200,7 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 前置步骤：必须先调 `export_note_blocks` 获取 block 结构。
 
 请求体结构：
+
 ```json
 {
   "note_id": "string, 必填, 目标笔记 ID",
@@ -204,19 +216,21 @@ curl -s -X POST "https://ima.qq.com/openapi/note/v1/{endpoint}" \
 ```
 
 **`user_request_id` 生成/复用规则**（用于后台版本合并）：
+
 - **响应同一条用户消息期间**，无论调用多少次 `update_note`（例如先改标题、再追加段落），**必须复用同一个 UUID**
 - **收到新的用户消息时**，生成新的 UUID
 - 未传或为空时后台会拒绝请求，返回 `210001`，msg: `UpdateNote userRequestId is empty`
 
 action 取值：
 
-| 值 | 含义 | new_content |
-|---|---|---|
-| 1 | EDIT — 整体替换目标块内容 | 必填 |
-| 2 | DELETE — 删除目标块 | 忽略 |
-| 3 | APPEND — 在目标块之后插入新内容 | 必填 |
+| 值  | 含义                            | new_content |
+| --- | ------------------------------- | ----------- |
+| 1   | EDIT — 整体替换目标块内容       | 必填        |
+| 2   | DELETE — 删除目标块             | 忽略        |
+| 3   | APPEND — 在目标块之后插入新内容 | 必填        |
 
 返回要点：
+
 - `data.results[]` —— 与请求 `updates` 一一对应，每条含 `block_id`、`success`(bool)、`error_code`、`error_msg`
 - 部分成功语义：失败的操作不影响文档，后续操作基于当前文档状态继续执行
 - 错误码：`210038`=BLOCK_NOT_FOUND，`210039`=BLOCK_NOT_EDITABLE
@@ -252,6 +266,7 @@ action 取值：
 **触发场景**：用户说「帮我记一下」「保存这段内容」。当不确定笔记是否已存在时用 —— note_id 为空则新建，不为空则追加。支持通过 `ima_cos_util -f <文件路径>` 上传获取 cosKey，再传 `content_cos_key` 代替 `content`，长内容场景推荐此方式（见「长内容写入策略」章节）。
 
 请求体结构：
+
 ```json
 {
   "note_id": "string, 可选, 为空则新建笔记, 不为空则追加到该笔记",
@@ -268,6 +283,7 @@ action 取值：
 `/openapi/note/v1/rename_note`
 
 请求体结构：
+
 ```json
 {
   "note_id": "string, 必填, 目标笔记 ID",
@@ -285,6 +301,7 @@ action 取值：
 **触发场景**：用户说「把笔记移到xx笔记本」「整理一下笔记」。
 
 请求体结构：
+
 ```json
 {
   "note_ids": ["string, 必填, 笔记 ID 数组, 最多 100 条"],
@@ -302,6 +319,7 @@ action 取值：
 `/openapi/note/v1/list_notebook`
 
 请求体结构：
+
 ```json
 {
   "cursor": "string, 必填, 首页传 '0' (注意和 list_note 不同), 翻页传返回的 next_cursor",
@@ -310,6 +328,7 @@ action 取值：
 ```
 
 返回要点：
+
 - `data.note_folder_infos[]` —— 笔记本列表（含 `folder_id`、`name`、`note_number`、`folder_type`），取 `folder_type=0`（用户自建）的条目获取 `folder_id`
 - `data.next_cursor` —— 翻页游标，传入下次请求的 `cursor`
 - `data.is_end` —— bool，是否最后一页
@@ -319,6 +338,7 @@ action 取值：
 `/openapi/note/v1/add_notebook`
 
 请求体结构：
+
 ```json
 {
   "folder_name": "string, 必填, 笔记本名称"
@@ -332,6 +352,7 @@ action 取值：
 `/openapi/note/v1/rename_notebook`
 
 请求体结构：
+
 ```json
 {
   "folder_id": "string, 必填, 目标笔记本 ID",
@@ -345,10 +366,10 @@ action 取值：
 
 根据内容规模选择写入方式：
 
-| 内容规模 | 推荐方式 |
-|---------|---------|
-| **短内容**（几句话，无特殊字符） | 直接 `-d '{...}'` 内联 |
-| **中等内容**（几百字以内，结构简单） | `file_write` 写 JSON 请求体到临时文件 → `curl -d @文件路径` |
+| 内容规模                                                       | 推荐方式                                                               |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **短内容**（几句话，无特殊字符）                               | 直接 `-d '{...}'` 内联                                                 |
+| **中等内容**（几百字以内，结构简单）                           | `file_write` 写 JSON 请求体到临时文件 → `curl -d @文件路径`            |
 | **长内容**（几百字以上，或含表格/emoji/引号/反斜杠等特殊字符） | 写 `.md` 文件 → `ima_cos_util` 上传 → `push_note` 的 `content_cos_key` |
 
 > 不要把长内容直接嵌入 curl `-d '{...}'` 的内联 JSON 中——特殊字符会导致失败。中等内容可通过 `file_write` 写 JSON 请求体再 `curl -d @文件路径` 发送；长内容推荐 COS 上传路径，可以绕过 JSON 序列化，最为可靠。具体操作示例见下方「多步工作流」。

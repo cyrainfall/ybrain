@@ -11,19 +11,17 @@
 **触发场景**：批量导入URL链接到知识库，仅支持网页链接的导入。
 
 请求体结构：
+
 ```json
 {
   "knowledge_base_id": "string, 必填, 知识库ID",
   "folder_id": "string, 可选, 文件夹ID（省略则添加到根目录）",
-  "urls": [
-    "string, URL链接1",
-    "string, URL链接2",
-    "string, URL链接3（最多支持10个URL）"
-  ]
+  "urls": ["string, URL链接1", "string, URL链接2", "string, URL链接3（最多支持10个URL）"]
 }
 ```
 
 返回结构：
+
 ```json
 {
   "results": {
@@ -48,6 +46,7 @@
 **触发场景**：向知识库中添加知识内容，该接口仅当添加笔记到知识库时需要单独调用
 
 请求体结构：
+
 ```json
 {
   "media_type": "int32, 必填, 媒体类型ID， 笔记类型直接填写11",
@@ -61,6 +60,7 @@
 ```
 
 返回结构：
+
 ```json
 {
   "media_id": "string, 成功添加后的媒体ID"
